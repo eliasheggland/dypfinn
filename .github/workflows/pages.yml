@@ -1,0 +1,51 @@
+name: Test og publiser Dypfinn
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hent kildekoden
+        uses: actions/checkout@v6
+      - name: Bruk Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Test beregninger og data
+        run: npm test
+      - name: Kontroller GitHub Pages-filer
+        run: npm run test:static
+      - name: Kontroller eksterne API-er og CORS
+        run: npm run test:apis
+        env:
+          PAGES_ORIGIN: https://${{ github.repository_owner }}.github.io
+      - name: Klargjør GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Last opp nettstedet
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: public
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: verify
+    steps:
+      - name: Publiser til GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,24 @@
+name: Daglig API-kontroll
+
+on:
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  api-health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hent kildekoden
+        uses: actions/checkout@v6
+      - name: Bruk Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - name: Kontroller vær, hav, tidevann, dybde og kart
+        run: npm run test:apis
+        env:
+          PAGES_ORIGIN: https://${{ github.repository_owner }}.github.io

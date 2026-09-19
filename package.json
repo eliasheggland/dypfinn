@@ -1,0 +1,16 @@
+{
+  "name": "dypfinn",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "serve": "python3 -m http.server 4186 --directory public",
+    "test": "node --test tests/*.test.mjs",
+    "test:static": "node scripts/verify-static.mjs",
+    "test:apis": "node scripts/api-smoke.mjs",
+    "verify": "npm test && npm run test:static && npm run test:apis"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

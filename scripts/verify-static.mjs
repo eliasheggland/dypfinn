@@ -13,11 +13,14 @@ for(const file of localRefs)await access(resolve(root,file));
 
 assert.ok(!html.match(/(?:href|src)="\/(?!\/)/),'Bruk relative filbaner slik at prosjektet virker under /repo-navn/ på GitHub Pages.');
 assert.match(html,/<title>Dypfinn/);
+assert.match(html,/id="auth-gate"/,'Innloggingsporten må vises før appen.');
+assert.match(html,/id="app" hidden/,'Kartet må være skjult frem til brukeren er innlogget.');
 
 const authSource=await readFile(resolve(root,'auth.js'),'utf8');
 for(const feature of ['createUserWithEmailAndPassword','signInWithEmailAndPassword','sendEmailVerification','sendPasswordResetEmail','signOut']){
   assert.ok(authSource.includes(feature),`Autentiseringsfunksjon mangler: ${feature}`);
 }
+assert.ok(authSource.includes('browserLocalPersistence'),'Innloggingen må huskes sikkert på enheten.');
 assert.ok(!authSource.includes('serviceAccount'),'Ingen Firebase-tjenernøkler skal ligge i en offentlig app.');
 
 const catalog=JSON.parse(await readFile(resolve(root,'data/areas.json'),'utf8'));

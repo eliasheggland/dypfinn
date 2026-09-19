@@ -29,7 +29,7 @@ Appen bruker bare offentlige HTTPS-tjenester uten hemmelige nøkler:
 
 ## Brukerkontoer
 
-Firebase Authentication håndterer e-post og passord. Passord lagres aldri i appen eller GitHub. `Email/Password` må være aktivert i Firebase, og `eliasheggland.github.io` må stå i listen over autoriserte domener. Private fiskeplasser, fangster og bilder ligger fortsatt lokalt i brukerens nettleser og publiseres aldri i repositoryet.
+Firebase Authentication håndterer e-post og passord. Besøkende møter en egen innloggingsside før kartet åpnes, og en gyldig innlogging huskes på enheten. Passord lagres aldri i appen eller GitHub. `Email/Password` må være aktivert i Firebase, og `eliasheggland.github.io` må stå i listen over autoriserte domener. Private fiskeplasser, fangster og bilder ligger fortsatt lokalt i brukerens nettleser og publiseres aldri i repositoryet.
 
 ## Lokal kontroll
 

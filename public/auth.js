@@ -2,7 +2,7 @@ import {firebaseConfig} from './firebase-config.js';
 
 const SDK_VERSION='12.19.0';
 const configured=Object.values(firebaseConfig).every(Boolean);
-let api=null,auth=null,currentUser=null;
+let api=null,auth=null,currentUser=null,initialized=false,initializing=null;
 const listeners=new Set();
 
 function publish(){
@@ -23,21 +23,25 @@ function friendly(error){
 
 async function ready(){
   if(!configured)throw Object.assign(new Error('Innlogging er ikke konfigurert.'),{code:'auth/not-configured'});
-  if(auth)return auth;
-  const [{initializeApp},authApi]=await Promise.all([
-    import(`https://www.gstatic.com/firebasejs/${SDK_VERSION}/firebase-app.js`),
-    import(`https://www.gstatic.com/firebasejs/${SDK_VERSION}/firebase-auth.js`)
-  ]);
-  api=authApi;
-  auth=api.getAuth(initializeApp(firebaseConfig));
-  api.setPersistence(auth,api.browserLocalPersistence).catch(()=>{});
-  api.onAuthStateChanged(auth,user=>{currentUser=user;publish();});
-  return auth;
+  if(initializing)return initializing;
+  initializing=(async()=>{
+    const [{initializeApp},authApi]=await Promise.all([
+      import(`https://www.gstatic.com/firebasejs/${SDK_VERSION}/firebase-app.js`),
+      import(`https://www.gstatic.com/firebasejs/${SDK_VERSION}/firebase-auth.js`)
+    ]);
+    api=authApi;
+    auth=api.getAuth(initializeApp(firebaseConfig));
+    await api.setPersistence(auth,api.browserLocalPersistence).catch(()=>{});
+    await new Promise(resolve=>api.onAuthStateChanged(auth,user=>{currentUser=user;initialized=true;publish();resolve();}));
+    return auth;
+  })();
+  return initializing;
 }
 
 export const AuthService={
   get configured(){return configured;},
   get user(){return currentUser;},
+  get initialized(){return initialized;},
   async init(){if(!configured){publish();return null;}return ready();},
   subscribe(listener){listeners.add(listener);listener(currentUser);return()=>listeners.delete(listener);},
   async signUp(email,password){

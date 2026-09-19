@@ -1,7 +1,7 @@
 import {fishingRule} from './rules.js?v=6';
 import {SPECIES,bySpecies,distance,bearing,offset,suitability,candidates,filterAreas,driftPlan,planTrip,depthLabel,formatDistance,compass} from './model.js?v=6';
 import {BathymetryService,ConditionsService,Repository} from './services.js?v=6';
-import {AuthService} from './auth.js?v=1';
+import {AuthService} from './auth.js?v=2';
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -34,7 +34,7 @@ const tile=(label,value)=>`<div class="data-tile"><small>${label}</small><strong
 const empty=(title,copy,action='')=>`<div class="empty">${icon('map')}<h3>${title}</h3><p>${copy}</p>${action}</div>`;
 let db=Repository.load(),map,catalog,allAreas=[],results=[],markers,selectionLayer,driftLayer,tripLayer,locationLayer,profileDot,depthLayer,contourLayer;
 const state={page:'kart',species:SPECIES.some(s=>s.id===db.preferences.species)?db.preferences.species:'all',region:'all',depth:'all',kind:'all',radius:0,center:[60.08,5.02],query:'',savedOnly:false,selected:null,hours:0,bundle:null,weatherRequest:0,session:null,location:null,catchFilter:'all',dialogKind:null,analysis:0};
-let toastTimer,sessionTimer,photoData=null,editingCatch=null;
+let toastTimer,sessionTimer,photoData=null,editingCatch=null,appStarted=false;
 
 function toast(message){clearTimeout(toastTimer);$('#toast').textContent=message;$('#toast').hidden=false;toastTimer=setTimeout(()=>$('#toast').hidden=true,3300);}
 function commit(change){const next=structuredClone(db);change(next);if(!Repository.save(next)){toast('Kunne ikke lagre. Eksporter data eller frigjør plass på enheten.');return false;}db=next;return true;}
@@ -308,6 +308,25 @@ function authModal(mode){
   const signup=mode==='signup';
   modal(signup?'Lag Dypfinn-konto':'Logg inn',`<form id="auth-form" class="form-grid" data-mode="${mode}"><label class="field">E-post<input name="email" type="email" autocomplete="email" inputmode="email" required></label><label class="field">Passord<input name="password" type="password" minlength="10" autocomplete="${signup?'new-password':'current-password'}" required></label>${signup?'<p class="hint">Minst 10 tegn. Du får en e-post for å bekrefte adressen.</p>':''}<p class="form-error" id="auth-error" role="alert" hidden></p></form>`,`<button class="secondary" data-action="${signup?'sign-in':'sign-up'}">${signup?'Har konto':'Ny bruker'}</button><button class="primary grow" form="auth-form" type="submit">${signup?'Lag konto':'Logg inn'}</button>`,'auth');
 }
+function setGateMode(mode){
+  const signup=mode==='signup',form=$('#auth-gate #auth-form');
+  form.dataset.mode=mode;
+  $('#auth-title').textContent=signup?'Opprett Dypfinn-konto':'Logg inn i Dypfinn';
+  $('#auth-lead').textContent=signup?'Kom i gang med bedre planlagte fisketurer.':'Dine fiskeplasser venter på deg.';
+  $('.auth-card .auth-kicker').textContent=signup?'KOM I GANG GRATIS':'VELKOMMEN TILBAKE';
+  form.querySelector('[name="password"]').autocomplete=signup?'new-password':'current-password';
+  form.querySelector('.auth-submit').textContent=signup?'Lag gratis konto':'Logg inn';
+  $('#auth-password-hint').hidden=!signup;
+  $('#auth-switch-copy').textContent=signup?'Har du allerede konto?':'Ny i Dypfinn?';
+  const toggle=$('#auth-switch-button');toggle.textContent=signup?'Logg inn':'Lag gratis konto';toggle.dataset.action=signup?'gate-signin':'gate-signup';
+  $('#auth-error').hidden=true;
+}
+function showAuthState(user){
+  const gate=$('#auth-gate'),app=$('#app');
+  gate.hidden=Boolean(user);app.hidden=!user;document.body.classList.toggle('auth-locked',!user);
+  if(user&&!appStarted)startApp().catch(err=>{console.error(err);notice('Appen kunne ikke lastes ferdig. Prøv å laste siden på nytt.');});
+  if(!user&&$('#dialog').open)closeModal();
+}
 function showSources(){modal('Data du kan etterprøve',`<p class="body-copy">${allAreas.length} konkrete kartpunkter rundt Austevoll med dybdeintervaller fra Kartverket.</p><a class="source-link" href="https://wms.geonorge.no/skwms1/wms.dybdedata2?SERVICE=WMS&REQUEST=GetCapabilities" target="_blank" rel="noopener">Kartverket · Sjøkart – Dybdedata<small>Kart og dybdeintervaller. Hentet ${catalog?date(catalog.retrievedAt):'–'}. Kartet er ikke beregnet for navigasjon.</small></a><a class="source-link" href="https://api.met.no/weatherapi/locationforecast/2.0/documentation" target="_blank" rel="noopener">MET Norge · vær- og havprognoser<small>Vind, bølger, temperatur og modellert strøm når tilgjengelig. Tidsstempel vises i Forhold.</small></a><a class="source-link" href="https://vannstand.kartverket.no/tideapi_no.html" target="_blank" rel="noopener">Kartverket · tidevann<small>Posisjonstilpasset astronomisk tidevann. Ikke observert totalvannstand eller strøm.</small></a><a class="source-link" href="https://www.hi.no/en/hi/nettrapporter/rapport-fra-havforskningen-2021-41" target="_blank" rel="noopener">Havforskningsinstituttet · habitatbeskrivelser<small>Bakgrunn for generelle artsprofiler. Modellen er ikke validert av Havforskningsinstituttet.</small></a><p class="hint">${esc(catalog?.method||'Kartintervaller fra Kartverket.')} Analysen undersøkte ${catalog?.algorithm?.scanned||'–'} kandidatpunkter og valgte ${allAreas.length} områder. Dypfinn bruker intervallgrenser for å unngå at brede dybdebånd blir tolket som bratte kanter. Artsrangeringen vekter dybde 50 %, bunnform 30 % og terreng 20 %. Eksakt bunnform mellom prøvene, bunntype og fiskeforekomst er ukjent. Stedsnavn er referanser fra Kartverkets stedsnavnregister; markørene ligger ved angitt retning og avstand fra navnepunktet.</p><p class="hint">Egnethet er en relativ habitatmodell. Den lover ikke fangst og vurderer ikke sikkerheten på sjøen.</p>`,'','sources');}
 async function shareApp(spot=false){const a=spot?selectedArea():null;const url=new URL(location.origin+location.pathname);if(a&&!a.custom)url.searchParams.set('spot',a.id);url.hash='kart';const title=a?'Dypfinn · '+a.name:'Dypfinn · fiskeområder i Austevoll';try{if(navigator.share)await navigator.share({title,url:url.href});else {await navigator.clipboard.writeText(url.href);toast('Delingslenken er kopiert.');}}catch(e){if(e.name!=='AbortError')modal('Del Dypfinn',`<p class="body-copy">Kopier lenken og send den til vennene dine.</p><input class="control" readonly aria-label="Delingslenke" value="${esc(url.href)}">`);}}
 function exportData(){const blob=new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`dypfinn-private-data-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);toast('Eksporten inneholder dine private fiskeposisjoner.');}
@@ -325,6 +344,8 @@ const actions={
   'new-catch':()=>catchForm(),'edit-catch':()=>catchForm(state.catchId),'delete-catch':deleteCatch,'catch-map':()=>{const c=db.catches.find(x=>x.id===state.catchId);closeModal();if(c?.spotId)selectSpot(c.spotId);},
   'share':()=>shareApp(),'share-spot':()=>shareApp(true),'export':exportData,'copy-coordinates':copyCoordinates,'navigate':navigateInfo,'refresh-weather':()=>loadConditions(selectedArea()?.coordinates||state.center,true),
   'sign-up':()=>authModal('signup'),'sign-in':()=>authModal('signin'),'reset-password':()=>authModal('reset'),
+  'gate-signup':()=>setGateMode('signup'),'gate-signin':()=>setGateMode('signin'),
+  'toggle-password':()=>{const input=$('#auth-gate input[name="password"]'),button=$('#auth-gate [data-action="toggle-password"]'),show=input.type==='password';input.type=show?'text':'password';button.textContent=show?'Skjul':'Vis';button.setAttribute('aria-label',show?'Skjul passord':'Vis passord');},
   'sign-out':async()=>{await AuthService.signOut();toast('Du er logget ut.');if(state.page==='profil')renderProfile();},
   'verify-email':async()=>{await AuthService.resendVerification();toast('Ny bekreftelsesmail er sendt.');},
   'reset-filters':()=>{Object.assign(state,{region:'all',depth:'all',kind:'all',radius:0,query:'',species:'all',savedOnly:false});$('#search').value='';commit(d=>d.preferences.species='all');closeModal();renderResults();fitResults();},
@@ -354,9 +375,9 @@ document.addEventListener('submit',async e=>{
     if(form.id==='catch-form')saveCatch(form);
     if(form.id==='boat-form'){const f=Object.fromEntries(new FormData(form));if(commit(d=>d.boat={name:f.name.trim(),speed:Number(f.speed),waveLimit:Number(f.waveLimit)}))toast('Båtprofilen er lagret.');}
     if(form.id==='auth-form'){
-      const submit=form.closest('.dialog')?.querySelector('[form="auth-form"]');if(submit)submit.disabled=true;
+      const inGate=Boolean(form.closest('#auth-gate')),submit=inGate?form.querySelector('[type="submit"]'):form.closest('.dialog')?.querySelector('[form="auth-form"]');if(submit)submit.disabled=true;
       const f=Object.fromEntries(new FormData(form));
-      try{if(form.dataset.mode==='signup'){await AuthService.signUp(f.email,f.password);toast('Konto opprettet. Sjekk e-posten din.');}else{await AuthService.signIn(f.email,f.password);toast('Du er logget inn.');}closeModal();showPage('profil',false);}catch(error){const box=$('#auth-error');box.textContent=error.message;box.hidden=false;}finally{if(submit)submit.disabled=false;}
+      try{if(form.dataset.mode==='signup'){await AuthService.signUp(f.email,f.password);toast('Konto opprettet. Sjekk e-posten din.');}else{await AuthService.signIn(f.email,f.password);toast('Du er logget inn.');}if(!inGate){closeModal();showPage('profil',false);}}catch(error){const box=form.querySelector('#auth-error');box.textContent=error.message;box.hidden=false;}finally{if(submit)submit.disabled=false;}
     }
     if(form.id==='reset-form'){
       const f=Object.fromEntries(new FormData(form));await AuthService.sendReset(f.email);closeModal();toast('Hvis adressen finnes, er e-posten sendt.');
@@ -380,10 +401,8 @@ setInterval(()=>{if(!document.hidden)loadConditions(selectedArea()?.coordinates|
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadConditions(selectedArea()?.coordinates||state.center);});
 window.addEventListener('hashchange',()=>showPage(location.hash.slice(1),false));
 
-async function init(){
-  icons();
-  AuthService.subscribe(()=>{if(state.page==='profil'&&$('#page-surface')&&!$('#page-surface').hidden)renderProfile();});
-  AuthService.init().catch(error=>console.warn('Konto kunne ikke startes:',error.message));
+async function startApp(){
+  if(appStarted)return;appStarted=true;
   if(!window.L){$('#map-loading').textContent='Kartet kunne ikke starte.';return;}
   map=L.map('map',{zoomControl:false,attributionControl:true,minZoom:5,maxZoom:18,zoomSnap:.25,preferCanvas:true}).setView(db.viewport?.center||[60.065,5.06],db.viewport?.zoom||11);
   map.createPane('base').style.zIndex=200;map.createPane('bathymetry').style.zIndex=220;map.createPane('contours').style.zIndex=230;
@@ -402,5 +421,10 @@ async function init(){
   $('#map').addEventListener('touchmove',e=>{if(!touchStart||e.touches.length!==1)return;if(Math.hypot(e.touches[0].clientX-touchStart[0],e.touches[0].clientY-touchStart[1])>10)clearTimeout(pressTimer);},{passive:true});$('#map').addEventListener('touchend',()=>clearTimeout(pressTimer),{passive:true});
   try{catalog=await BathymetryService.catalog();allAreas=catalog.spots;renderResults();if(!db.viewport)fitResults();}catch(err){$('#area-list').innerHTML=empty('Områdene kunne ikke lastes','Kontroller forbindelsen og prøv igjen.',`<button class="secondary" data-action="reload">Last på nytt</button>`);$('#map-loading').hidden=true;}
   loadConditions(state.center);updateCounts();showPage(location.hash.slice(1)||'kart',false);const shared=new URLSearchParams(location.search).get('spot');if(shared&&allAreas.some(s=>s.id===shared))selectSpot(shared);
+}
+async function init(){
+  icons();
+  AuthService.subscribe(user=>{showAuthState(user);if(state.page==='profil'&&$('#page-surface')&&!$('#page-surface').hidden)renderProfile();});
+  try{await AuthService.init();}catch(error){console.warn('Konto kunne ikke startes:',error.message);const box=$('#auth-error');box.textContent='Innloggingen kunne ikke startes. Sjekk nettet og prøv å laste siden på nytt.';box.hidden=false;}
 }
 init().catch(err=>{console.error(err);notice('Appen kunne ikke lastes ferdig. Prøv å laste siden på nytt.');});

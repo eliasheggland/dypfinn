@@ -5,9 +5,37 @@
 <meta name="theme-color" content="#0c2946"><meta name="description" content="Dypfinn viser analyserte fiskeområder i Austevoll med kartdybder, vær, vind, bølger, tidevann og driftplan.">
 <title>Dypfinn — Finn gode fiskeområder</title>
 <link rel="icon" href="./favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./vendor/leaflet.css"><link rel="stylesheet" href="./style.css?v=5">
-<link rel="stylesheet" href="./coastal.css?v=6"><link rel="stylesheet" href="./premium.css?v=8"><script defer src="./vendor/leaflet.js"></script><script type="module" src="./app.js?v=8"></script>
+<link rel="stylesheet" href="./coastal.css?v=6"><link rel="stylesheet" href="./premium.css?v=9"><script defer src="./vendor/leaflet.js"></script><script type="module" src="./app.js?v=9"></script>
 </head>
-<body><div id="app">
+<body class="auth-locked">
+<section class="auth-gate" id="auth-gate" aria-labelledby="auth-title">
+<div class="auth-visual" aria-hidden="true">
+<div class="auth-brand"><span class="auth-logo">F<i></i></span><span>DYPFINN</span></div>
+<div class="auth-promise"><p class="auth-kicker">FISKEKART FOR NORSKE FARVANN</p><h2>Finn neste fiskeplass.<br>Før du går om bord.</h2><p>Analyserte bunnformer, oppdaterte sjøforhold og konkrete fiskeområder – samlet i ett rolig kart.</p><div class="auth-features"><span>51 analyserte områder</span><span>Live vær og bølger</span><span>Minstemål og artsguide</span></div></div>
+<div class="auth-contours"><i></i><i></i><i></i><i></i></div>
+<p class="auth-source">Dybder fra Kartverket · Vær fra MET Norge</p>
+</div>
+<div class="auth-panel">
+<div class="auth-mobile-brand"><span class="auth-logo">F<i></i></span><span>DYPFINN</span></div>
+<div class="auth-card">
+<p class="auth-kicker">VELKOMMEN TILBAKE</p>
+<h1 id="auth-title">Logg inn i Dypfinn</h1>
+<p class="auth-lead" id="auth-lead">Dine fiskeplasser venter på deg.</p>
+<form id="auth-form" class="auth-form" data-mode="signin">
+<label>E-postadresse<input name="email" type="email" autocomplete="email" inputmode="email" placeholder="navn@eksempel.no" required></label>
+<label>Passord<span class="auth-password"><input name="password" type="password" minlength="10" autocomplete="current-password" placeholder="Skriv inn passordet ditt" required><button type="button" data-action="toggle-password" aria-label="Vis passord">Vis</button></span></label>
+<p class="auth-password-hint" id="auth-password-hint" hidden>Bruk minst 10 tegn.</p>
+<p class="form-error" id="auth-error" role="alert" hidden></p>
+<button class="auth-submit" type="submit">Logg inn</button>
+</form>
+<button class="auth-reset" data-action="reset-password">Glemt passord?</button>
+<div class="auth-divider"><span>eller</span></div>
+<p class="auth-switch"><span id="auth-switch-copy">Ny i Dypfinn?</span> <button data-action="gate-signup" id="auth-switch-button">Lag gratis konto</button></p>
+<p class="auth-terms">Gratis å bruke. Ved å fortsette godtar du at kontoen brukes til sikker innlogging. Fiskedata lagres foreløpig bare på denne enheten.</p>
+</div>
+</div>
+</section>
+<div id="app" hidden>
 <nav class="navigation" aria-label="Hovedmeny">
 <a class="brand" href="#kart" aria-label="Dypfinn hjem">F<span></span></a>
 <div class="nav-items">

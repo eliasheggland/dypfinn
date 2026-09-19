@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#0c2946"><meta name="description" content="Dypfinn viser analyserte fiskeområder i Austevoll med kartdybder, vær, vind, bølger, tidevann og driftplan.">
 <title>Dypfinn — Finn gode fiskeområder</title>
 <link rel="icon" href="./favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./vendor/leaflet.css"><link rel="stylesheet" href="./style.css?v=5">
-<link rel="stylesheet" href="./coastal.css?v=6"><link rel="stylesheet" href="./premium.css?v=9"><script defer src="./vendor/leaflet.js"></script><script type="module" src="./app.js?v=9"></script>
+<link rel="stylesheet" href="./coastal.css?v=6"><link rel="stylesheet" href="./premium.css?v=10"><script defer src="./vendor/leaflet.js"></script><script type="module" src="./app.js?v=10"></script>
 </head>
 <body class="auth-locked">
 <section class="auth-gate" id="auth-gate" aria-labelledby="auth-title">
@@ -70,6 +70,7 @@
 </aside>
 <div class="map-top-controls"><button class="condition-pill" id="conditions-pill" data-action="conditions"><span data-icon="wind"></span><span id="condition-summary">Henter varsel…</span><span data-icon="chevron"></span></button></div>
 <div class="map-controls"><button data-action="layers" aria-label="Kartlag"><span data-icon="layers"></span></button><div><button data-action="zoom-in" aria-label="Zoom inn"><span data-icon="plus"></span></button><button data-action="zoom-out" aria-label="Zoom ut"><span data-icon="minus"></span></button></div><button data-action="locate" aria-label="Vis min posisjon"><span data-icon="locate"></span></button><button data-action="fit" aria-label="Vis alle fiskeområder"><span data-icon="expand"></span></button></div>
+<button class="mobile-gps" data-action="locate" aria-label="Finn min posisjon"><span data-icon="locate"></span><span class="gps-label">Min posisjon</span></button>
 <div class="map-coordinate" id="map-coordinate">60.0800° N · 5.0200° Ø</div>
 <button class="mobile-results" data-action="show-list"><span data-icon="list"></span><span id="mobile-count">Vis fiskeområder</span></button>
 <div class="depth-key"><span>KARTDYBDE</span><i></i><div><span>Grunt</span><span>Dypt</span></div></div>

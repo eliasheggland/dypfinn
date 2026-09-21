@@ -134,7 +134,12 @@ async function loadConditions(coordinates,force=false){
   const request=++state.weatherRequest;state.bundle=null;if($('#spot-weather'))$('#spot-weather').innerHTML='Henter forhold ved denne plassen…';$('#condition-summary').textContent='Henter varsel…';
   const bundle=await ConditionsService.load(coordinates,{force});if(request!==state.weatherRequest)return;state.bundle=bundle;renderConditionPill();if($('#spot-weather'))$('#spot-weather').innerHTML=weatherInline();if(state.dialogKind==='conditions')showConditions();
 }
-function weatherInline(){const c=ConditionsService.at(state.bundle,state.hours);return `<span>${num(c.wind)} m/s vind · ${num(c.waves)} m sjø</span><button data-action="conditions">Se forhold</button>`;}
+function weatherInline(){
+  const place=selectedArea(),matches=!place||state.bundle?.coordinates&&distance(place.coordinates,state.bundle.coordinates)<10;
+  if(!matches)return `<span class="weather-place">Forhold ved ${esc(place.name)}</span><span class="weather-reading">Henter oppdatert varsel…</span>`;
+  const c=ConditionsService.at(state.bundle,state.hours),name=place?`Forhold ved ${esc(place.name)}`:'Forhold ved kartet';
+  return `<span class="weather-place">${name}</span><span class="weather-reading">${num(c.wind)} m/s vind · ${num(c.waves)} m sjø</span><button data-action="conditions">Se detaljer</button>`;
+}
 function renderConditionPill(){const c=ConditionsService.at(state.bundle,state.hours);$('#condition-summary').textContent=c.wind!==undefined?`${num(c.wind)} m/s ${compass(c.windFrom)} · ${c.waves!==undefined?num(c.waves)+' m sjø':'sjøvarsel mangler'}${state.hours?' · +'+state.hours+' t':''}`:'Værdata utilgjengelig';}
 function showConditions(){
   const c=ConditionsService.at(state.bundle,state.hours),hourly=[0,3,6,9,12,15,18,21].map(h=>ConditionsService.at(state.bundle,h));

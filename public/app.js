@@ -1,7 +1,7 @@
 import {fishingRule} from './rules.js?v=6';
 import {SPECIES,bySpecies,distance,bearing,offset,suitability,candidates,filterAreas,driftPlan,planTrip,depthLabel,formatDistance,compass} from './model.js?v=6';
 import {BathymetryService,ConditionsService,Repository} from './services.js?v=6';
-import {AuthService} from './auth.js?v=2';
+import {AuthService} from './auth.js?v=3';
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -458,7 +458,11 @@ async function startApp(){
 }
 async function init(){
   icons();
+  if(location.protocol==='file:'){
+    document.body.classList.add('file-preview');
+    const link=$('#auth-online-link');if(link)link.hidden=false;
+  }
   AuthService.subscribe(user=>{showAuthState(user);if(state.page==='profil'&&$('#page-surface')&&!$('#page-surface').hidden)renderProfile();});
-  try{await AuthService.init();}catch(error){console.warn('Konto kunne ikke startes:',error.message);const box=$('#auth-error');box.textContent='Innloggingen kunne ikke startes. Sjekk nettet og prøv å laste siden på nytt.';box.hidden=false;}
+  try{await AuthService.init();}catch(error){console.warn('Konto kunne ikke startes:',error.message);const box=$('#auth-error');box.textContent=error.message||'Innloggingen kunne ikke startes. Sjekk nettet og prøv å laste siden på nytt.';box.hidden=false;}
 }
 init().catch(err=>{console.error(err);notice('Appen kunne ikke lastes ferdig. Prøv å laste siden på nytt.');});

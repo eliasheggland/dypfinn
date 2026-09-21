@@ -12,6 +12,8 @@ function publish(){
 
 function friendly(error){
   const code=error?.code||'';
+  if(code==='auth/file-preview')return 'Åpne Dypfinn på nett for å logge inn. Den lokale forhåndsvisningen støtter ikke sikker innlogging.';
+  if(code==='auth/unauthorized-domain')return 'Denne adressen er ikke godkjent for innlogging. Åpne Dypfinn på nett og prøv igjen.';
   if(code==='auth/email-already-in-use')return 'E-postadressen er allerede registrert.';
   if(code==='auth/weak-password')return 'Passordet oppfyller ikke sikkerhetskravene.';
   if(code==='auth/invalid-email')return 'Skriv inn en gyldig e-postadresse.';
@@ -22,6 +24,7 @@ function friendly(error){
 }
 
 async function ready(){
+  if(location.protocol==='file:')throw Object.assign(new Error('Lokal forhåndsvisning'),{code:'auth/file-preview'});
   if(!configured)throw Object.assign(new Error('Innlogging er ikke konfigurert.'),{code:'auth/not-configured'});
   if(initializing)return initializing;
   initializing=(async()=>{

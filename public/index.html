@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#0c2946"><meta name="description" content="Dypfinn viser analyserte fiskeområder i Austevoll med kartdybder, vær, vind, bølger, tidevann og driftplan.">
 <title>Dypfinn — Finn gode fiskeområder</title>
 <link rel="icon" href="./favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./vendor/leaflet.css"><link rel="stylesheet" href="./style.css?v=5">
-<link rel="stylesheet" href="./coastal.css?v=6"><link rel="stylesheet" href="./premium.css?v=12"><script defer src="./vendor/leaflet.js"></script><script type="module" src="./app.js?v=12"></script>
+<link rel="stylesheet" href="./coastal.css?v=6"><link rel="stylesheet" href="./premium.css?v=13"><script defer src="./vendor/leaflet.js"></script><script type="module" src="./app.js?v=13"></script>
 </head>
 <body class="auth-locked">
 <section class="auth-gate" id="auth-gate" aria-labelledby="auth-title">
@@ -41,26 +41,22 @@
 <a class="brand" href="#kart" aria-label="Dypfinn hjem">F<span></span></a>
 <div class="nav-items">
 <button data-page="kart" class="active" aria-current="page"><span data-icon="map"></span><span>Kart</span></button>
-<button data-page="finn"><span data-icon="scan"></span><span>Finn</span></button>
-<button data-page="tur"><span data-icon="route"></span><span>Planlegg</span><i id="trip-count" hidden></i></button>
 <button data-page="fangster"><span data-icon="fish"></span><span>Fangster</span></button>
-<button data-page="profil"><span data-icon="user"></span><span>Profil</span></button>
-</div><button class="nav-help" data-action="sources" aria-label="Datakilder og kartinformasjon"><span data-icon="info"></span></button>
+<button data-action="more"><span data-icon="menu"></span><span>Mer</span><i id="trip-count" hidden></i></button>
+</div><button class="nav-help" data-action="more" aria-label="Flere valg"><span data-icon="menu"></span></button>
 </nav>
 <main class="workspace">
 <header class="topbar">
 <div class="wordmark">DYPFINN</div>
 <div class="region-heading"><span data-icon="pin"></span><div>Austevoll<span>Vestland, Norge</span></div></div>
-<button class="data-pill" data-action="sources"><span data-icon="layers"></span><span>Sjøkart og dybder</span></button>
-<button class="icon-button top-action" data-action="saved" aria-label="Åpne lagrede fiskeplasser"><span data-icon="bookmark"></span><span class="action-label">Lagret</span><b id="saved-count">0</b></button>
-<button class="icon-button top-action" data-action="share" aria-label="Del Dypfinn med venner" title="Del Dypfinn"><span data-icon="route"></span><span class="action-label">Del</span></button>
+<button class="icon-button top-action simple-menu" data-action="more" aria-label="Meny"><span data-icon="menu"></span><span class="action-label">Meny</span></button>
 </header>
 <section id="map-surface" aria-label="Fiskekart">
 <div id="map" aria-label="Interaktivt kart over Austevoll"></div><div class="map-loading" id="map-loading">Laster sjøkart…</div>
-<div class="quick-species" aria-label="Velg fiskeart"><button data-species="all">Alle arter</button><button data-species="torsk">Torsk</button><button data-species="sei">Sei</button><button data-species="lyr">Lyr</button><button data-species="lange">Lange</button><button data-action="species">Flere arter +</button></div>
+<div class="quick-species" aria-label="Velg fiskeart"><button data-species="all">Alle arter</button><button data-species="torsk">Torsk</button><button data-species="sei">Sei</button><button data-action="species">Flere arter</button></div>
 <aside class="explorer" id="explorer" aria-label="Fiskeområder">
 <button class="sheet-handle mobile-only" data-action="collapse-list" aria-label="Trekk ned eller trykk for å lukke listen"><span></span></button>
-<div class="explorer-heading"><div><p class="eyebrow">ANALYSERTE OMRÅDER</p><h1>Hvor vil du fiske?</h1></div><button class="icon-button mobile-only" data-action="collapse-list" aria-label="Skjul områdelisten"><span data-icon="chevron"></span></button></div>
+<div class="explorer-heading"><div><p class="eyebrow">FISKEPLASSER</p><h1>Velg en plass</h1></div><button class="icon-button mobile-only" data-action="collapse-list" aria-label="Skjul områdelisten"><span data-icon="chevron"></span></button></div>
 <label class="search-field"><span data-icon="search"></span><input id="search" type="search" placeholder="Søk art, område eller dybde" aria-label="Søk fiskeområder"><kbd>⌘ K</kbd></label>
 <div class="filter-toolbar"><button class="species-control" data-action="species"><span data-icon="fish"></span><span id="species-label">Alle arter</span><span data-icon="chevron"></span></button><button class="filter-control" data-action="filters"><span data-icon="filter"></span><span>Filter</span><i id="filter-count" hidden>0</i></button></div>
 <div class="area-tabs" role="tablist" aria-label="Områder"><button role="tab" aria-selected="true" data-list="all">Utforsk <span id="area-count">–</span></button><button role="tab" aria-selected="false" data-list="saved">Lagrede <span id="saved-tab-count">0</span></button></div>
@@ -70,12 +66,12 @@
 <div class="explorer-foot"><span data-icon="info"></span><span>Valgt fra dybder og bunnformer i sjøkartet. Fisk er ikke bekreftet. Zoom inn for flere markører.</span></div>
 </aside>
 <div class="map-top-controls"><button class="condition-pill" id="conditions-pill" data-action="conditions"><span data-icon="wind"></span><span id="condition-summary">Henter varsel…</span><span data-icon="chevron"></span></button></div>
-<div class="map-controls"><button data-action="layers" aria-label="Kartlag"><span data-icon="layers"></span></button><div><button data-action="zoom-in" aria-label="Zoom inn"><span data-icon="plus"></span></button><button data-action="zoom-out" aria-label="Zoom ut"><span data-icon="minus"></span></button></div><button data-action="locate" aria-label="Vis min posisjon"><span data-icon="locate"></span></button><button data-action="fit" aria-label="Vis alle fiskeområder"><span data-icon="expand"></span></button></div>
+<div class="map-controls"><button data-action="layers" aria-label="Kartlag"><span data-icon="layers"></span></button><button data-action="locate" aria-label="Vis min posisjon"><span data-icon="locate"></span></button><button data-action="fit" aria-label="Vis alle fiskeområder"><span data-icon="expand"></span></button></div>
 <button class="mobile-gps" data-action="locate" aria-label="Finn min posisjon"><span data-icon="locate"></span><span class="gps-label">Min posisjon</span></button>
 <div class="map-coordinate" id="map-coordinate">60.0800° N · 5.0200° Ø</div>
 <button class="mobile-results" data-action="show-list"><span data-icon="list"></span><span id="mobile-count">Vis fiskeområder</span></button>
 <div class="depth-key"><span>KARTDYBDE</span><i></i><div><span>Grunt</span><span>Dypt</span></div></div>
-<div class="map-footer"><div class="time-control"><span data-icon="clock"></span><span class="forecast-label">Vær</span><div id="time-buttons"><button class="active" data-hour="0">Nå</button><button data-hour="3">+3 t</button><button data-hour="6">+6 t</button><button data-hour="12">+12 t</button><button data-hour="24">I morgen</button></div></div><button class="primary find-button" data-action="analyze"><span data-icon="scan"></span>Finn steder</button></div>
+<div class="map-footer"><div class="time-control"><span data-icon="clock"></span><span class="forecast-label">Vær</span><div id="time-buttons"><button class="active" data-hour="0">Nå</button><button data-hour="3">+3 t</button><button data-hour="24">I morgen</button></div></div><button class="primary find-button" data-action="analyze"><span data-icon="scan"></span>Vis plasser</button></div>
 <div class="map-notice" id="map-notice" hidden></div>
 <aside class="detail-panel" id="detail-panel" aria-label="Valgt fiskeområde" hidden></aside>
 <div class="fishing-bar" id="fishing-bar" hidden></div>

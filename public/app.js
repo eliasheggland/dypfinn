@@ -21,7 +21,7 @@ const paths={
   wind:'<path d="M3 8h12a3 3 0 1 0-3-3M2 12h17a3 3 0 1 1-3 3M4 16h5a3 3 0 1 1-3 3"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',minus:'<path d="M5 12h14"/>',locate:'<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/>',
   list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.1M3 12h.1M3 18h.1"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',close:'<path d="m6 6 12 12M6 18 18 6"/>',
-  check:'<path d="m5 12 4 4L19 6"/>',arrow:'<path d="M4 12h16m-6-6 6 6-6 6"/>',trash:'<path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/>',download:'<path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/>',waves:'<path d="M2 7q3-4 6 0t6 0 6 0M2 12q3-4 6 0t6 0 6 0M2 17q3-4 6 0t6 0 6 0"/>',boat:'<path d="M4 12h16l-3 7H7Zm4 0V7h8v5M12 3v4M3 22q3-3 6 0t6 0 6 0"/>'
+  check:'<path d="m5 12 4 4L19 6"/>',arrow:'<path d="M4 12h16m-6-6 6 6-6 6"/>',trash:'<path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7"/>',download:'<path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/>',waves:'<path d="M2 7q3-4 6 0t6 0 6 0M2 12q3-4 6 0t6 0 6 0M2 17q3-4 6 0t6 0 6 0"/>',boat:'<path d="M4 12h16l-3 7H7Zm4 0V7h8v5M12 3v4M3 22q3-3 6 0t6 0 6 0"/>',menu:'<path d="M4 7h16M4 12h16M4 17h16"/>'
 };
 const icon=(name)=>`<svg class="icon" aria-hidden="true" viewBox="0 0 24 24">${paths[name]||paths.info}</svg>`;
 function icons(root=document){root.querySelectorAll('[data-icon]').forEach(e=>e.replaceWith(fragment(icon(e.dataset.icon))));}
@@ -38,7 +38,7 @@ let toastTimer,sessionTimer,photoData=null,editingCatch=null,appStarted=false,gp
 
 function toast(message){clearTimeout(toastTimer);$('#toast').textContent=message;$('#toast').hidden=false;toastTimer=setTimeout(()=>$('#toast').hidden=true,3300);}
 function commit(change){const next=structuredClone(db);change(next);if(!Repository.save(next)){toast('Kunne ikke lagre. Eksporter data eller frigjør plass på enheten.');return false;}db=next;return true;}
-function updateCounts(){$('#saved-count').textContent=db.saved.length;$('#saved-tab-count').textContent=db.saved.length;const n=db.trip?.stops?.length||0;$('#trip-count').hidden=!n;$('#trip-count').textContent=n;}
+function updateCounts(){const saved=$('#saved-count');if(saved)saved.textContent=db.saved.length;$('#saved-tab-count').textContent=db.saved.length;const n=db.trip?.stops?.length||0;$('#trip-count').hidden=!n;$('#trip-count').textContent=n;}
 function notice(message){$('#map-notice').hidden=!message;$('#map-notice').textContent=message||'';}
 function modal(title,body,footer='',kind='generic'){
   state.dialogKind=kind;$('#dialog-content').innerHTML=`<div class="dialog-head"><h2 id="dialog-title">${title}</h2><button class="icon-button" data-action="close-dialog" aria-label="Lukk">${icon('close')}</button></div><div class="dialog-body">${body}</div>${footer?`<div class="dialog-footer">${footer}</div>`:''}`;
@@ -184,6 +184,10 @@ function showFilters(){
 function showLayers(){const l=db.preferences.layers;modal('Kartlag',[
   ['depth','Dybdesjattering','Dybdearealer fra Kartverket','layers'],['contours','Dybdekoter og tall','Vises mer detaljert når du zoomer inn','map'],['areas','Fiskeområder','Markører med kartdybde og artsvurdering','pin']
 ].map(([id,title,copy,ico])=>`<label class="toggle-row">${icon(ico)}<div>${title}<small>${copy}</small></div><input type="checkbox" data-layer="${id}" ${l[id]?'checked':''} aria-label="${title}"></label>`).join('')+`<p class="hint">Kartlaget er beregnet for oversikt og planlegging. <a href="https://www.kartverket.no/til-sjos" target="_blank" rel="noopener">Kartverkets sjøkartinformasjon</a></p>`,'','layers');}
+function showMore(){
+  const tripCount=db.trip?.stops.length||0;
+  modal('Meny',`<p class="body-copy">Alt som ikke trengs mens du ser på kartet, samlet på ett sted.</p><div class="simple-menu-list"><button class="simple-menu-item" data-action="saved">${icon('bookmark')}<span><strong>Lagrede plasser</strong><small>${db.saved.length} lagret på denne enheten</small></span>${icon('chevron')}</button><button class="simple-menu-item" data-page="tur">${icon('route')}<span><strong>Planlegg tur</strong><small>${tripCount?tripCount+' stopp klare':'Legg steder til fra kartet'}</small></span>${icon('chevron')}</button><button class="simple-menu-item" data-page="fangster">${icon('fish')}<span><strong>Fangster</strong><small>${db.catches.length?'Se fangstloggen din':'Registrer fangster når du fisker'}</small></span>${icon('chevron')}</button><button class="simple-menu-item" data-page="profil">${icon('user')}<span><strong>Konto og innstillinger</strong><small>Båt, eksport og innlogging</small></span>${icon('chevron')}</button><button class="simple-menu-item" data-action="sources">${icon('info')}<span><strong>Datakilder</strong><small>Kart, vær og hvordan vurderingene virker</small></span>${icon('chevron')}</button></div>`,'<button class="secondary" data-action="share">Del Dypfinn</button><button class="primary" data-action="close-dialog">Til kartet</button>','menu');
+}
 function applyLayers(){const l=db.preferences.layers;for(const [key,layer] of [['depth',depthLayer],['contours',contourLayer]])if(l[key])layer.addTo(map);else layer.remove();$('.depth-key').hidden=!l.depth;renderMarkers();}
 async function analyze(){
   showPage('kart',false);state.center=state.location||[map.getCenter().lat,map.getCenter().lng];renderResults();
@@ -243,11 +247,12 @@ async function inspectPoint(point){
 function saveCustom(){const a={...state.customPoint,name:$('#custom-name').value.trim()||'Min fiskeplass'};if(!commit(d=>{d.custom.push(a);d.saved.push(a.id);}))return;closeModal();state.savedOnly=true;renderResults();selectSpot(a.id);toast('Kartpunkt lagret privat.');}
 
 function showPage(page,close=true){
-  if(!['kart','finn','tur','fangster','profil'].includes(page))page='kart';
+  if(page==='finn')page='kart';
+  if(!['kart','tur','fangster','profil'].includes(page))page='kart';
   if(location.hash!==`#${page}`)history.replaceState(null,'',`#${page}`);
   state.page=page;$$('[data-page]').forEach(b=>{b.classList.toggle('active',b.dataset.page===page);if(b.dataset.page===page)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
-  const isMap=page==='kart'||page==='finn';$('#map-surface').hidden=!isMap;$('#page-surface').hidden=isMap;
-  if(isMap){map?.invalidateSize();if(page==='finn'){$('#map-surface').classList.add('list-open');if(close)showFilters();}}
+  const isMap=page==='kart';$('#map-surface').hidden=!isMap;$('#page-surface').hidden=isMap;
+  if(isMap){map?.invalidateSize();}
   else {if(page==='fangster')renderCatches();if(page==='tur')renderTrip();if(page==='profil')renderProfile();}
 }
 function addTrip(){const a=selectedArea();if(!a)return;if(db.trip?.stops.includes(a.id)){toast('Området ligger allerede i turen.');return;}
@@ -350,7 +355,7 @@ async function copyCoordinates(){const a=selectedArea();if(!a)return;try{await n
 
 const actions={
   'expand-detail':()=>$('#detail-panel').classList.toggle('expanded'),
-  'close-dialog':closeModal,'close-detail':closeDetail,'species':showSpecies,'filters':showFilters,'layers':showLayers,'fit':fitResults,'locate':locate,'retry-locate':()=>{closeModal();locate();},'sources':showSources,'conditions':showConditions,'analyze':analyze,
+  'close-dialog':closeModal,'close-detail':closeDetail,'species':showSpecies,'filters':showFilters,'layers':showLayers,'fit':fitResults,'locate':locate,'retry-locate':()=>{closeModal();locate();},'sources':showSources,'more':showMore,'conditions':showConditions,'analyze':analyze,
   'zoom-in':()=>map.zoomIn(),'zoom-out':()=>map.zoomOut(),'show-list':()=>{$('#map-surface').classList.add('list-open');},'collapse-list':()=>$('#map-surface').classList.remove('list-open'),
   'saved':()=>{Object.assign(state,{savedOnly:true,query:'',species:'all',region:'all',depth:'all',kind:'all',radius:0});$('#search').value='';showPage('kart',false);closeDetail();$('#map-surface').classList.add('list-open');renderResults();},
   'save-spot':saveSpot,'save-custom':saveCustom,'drift':showDrift,'show-drift':drawDrift,'add-trip':addTrip,'show-trip':showTrip,
@@ -386,7 +391,7 @@ document.addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;
   try{
     if(b.dataset.action&&actions[b.dataset.action])await actions[b.dataset.action]();
-    if(b.dataset.page)showPage(b.dataset.page);
+    if(b.dataset.page){if($('#dialog').open)closeModal();showPage(b.dataset.page);}
     if(b.dataset.spot){closeModal();selectSpot(b.dataset.spot);}
     if(b.dataset.species)chooseSpecies(b.dataset.species);
     if(b.dataset.guide)showSpeciesGuide(b.dataset.guide);

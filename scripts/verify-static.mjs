@@ -19,12 +19,14 @@ assert.match(html,/class="mobile-gps"/,'Mobilkartet må ha en synlig GPS-kontrol
 
 const authSource=await readFile(resolve(root,'auth.js'),'utf8');
 const appSource=await readFile(resolve(root,'app.js'),'utf8');
+const premiumSource=await readFile(resolve(root,'premium.css'),'utf8');
 for(const feature of ['createUserWithEmailAndPassword','signInWithEmailAndPassword','sendEmailVerification','sendPasswordResetEmail','signOut']){
   assert.ok(authSource.includes(feature),`Autentiseringsfunksjon mangler: ${feature}`);
 }
 assert.ok(authSource.includes('browserLocalPersistence'),'Innloggingen må huskes sikkert på enheten.');
 assert.ok(!authSource.includes('serviceAccount'),'Ingen Firebase-tjenernøkler skal ligge i en offentlig app.');
 for(const feature of ['touchZoom:true','gesturestart','getCurrentPosition','isSecureContext'])assert.ok(appSource.includes(feature),`Kart/GPS-funksjon mangler: ${feature}`);
+assert.ok(premiumSource.includes('.explorer{pointer-events:none}'),'Den sammenfoldede mobil-listen må slippe berøringer gjennom til kart og værkontroller.');
 
 const catalog=JSON.parse(await readFile(resolve(root,'data/areas.json'),'utf8'));
 assert.ok(Array.isArray(catalog.spots)&&catalog.spots.length>=30,'Fiskeområde-katalogen mangler eller er for liten.');

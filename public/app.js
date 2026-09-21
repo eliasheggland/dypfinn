@@ -365,6 +365,23 @@ const actions={
   'reset-filters':()=>{Object.assign(state,{region:'all',depth:'all',kind:'all',radius:0,query:'',species:'all',savedOnly:false});$('#search').value='';commit(d=>d.preferences.species='all');closeModal();renderResults();fitResults();},
   'reload':()=>location.reload()
 };
+function setForecastHour(button){
+  const hours=Number(button?.dataset.hour);
+  if(!Number.isFinite(hours))return;
+  state.hours=hours;
+  $$('[data-hour]').forEach(x=>x.classList.toggle('active',x===button));
+  renderConditionPill();
+  if($('#spot-weather'))$('#spot-weather').innerHTML=weatherInline();
+}
+// Keep the forecast selector responsive on mobile even when the map library
+// consumes a synthetic click after a touch gesture.
+$('#time-buttons')?.addEventListener('pointerup',e=>{
+  if(e.pointerType!=='touch')return;
+  const button=e.target.closest('[data-hour]');
+  if(!button)return;
+  e.preventDefault();
+  setForecastHour(button);
+});
 document.addEventListener('click',async e=>{
   const b=e.target.closest('button');if(!b)return;
   try{
@@ -374,7 +391,7 @@ document.addEventListener('click',async e=>{
     if(b.dataset.species)chooseSpecies(b.dataset.species);
     if(b.dataset.guide)showSpeciesGuide(b.dataset.guide);
     if(b.dataset.list){state.savedOnly=b.dataset.list==='saved';renderResults();}
-    if(b.dataset.hour){state.hours=Number(b.dataset.hour);$('[data-hour]').forEach(x=>x.classList.toggle('active',x===b));renderConditionPill();if($('#spot-weather'))$('#spot-weather').innerHTML=weatherInline();}
+    if(b.dataset.hour)setForecastHour(b);
     if(b.dataset.catch)showCatch(b.dataset.catch);
     if(b.dataset.removeStop){commit(d=>d.trip.stops=d.trip.stops.filter(x=>x!==b.dataset.removeStop));renderTrip();updateCounts();}
     if(b.dataset.confirmDelete){commit(d=>d.catches=d.catches.filter(c=>c.id!==b.dataset.confirmDelete));closeModal();renderCatches();}

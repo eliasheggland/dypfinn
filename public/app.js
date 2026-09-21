@@ -438,7 +438,7 @@ async function startApp(){
   if(!window.L){$('#map-loading').textContent='Kartet kunne ikke starte.';return;}
   map=L.map('map',{zoomControl:false,attributionControl:true,minZoom:5,maxZoom:18,zoomSnap:.25,preferCanvas:true,dragging:true,touchZoom:true,scrollWheelZoom:true,doubleClickZoom:true,boxZoom:true,keyboard:true}).setView(db.viewport?.center||[60.065,5.06],db.viewport?.zoom||11);
   map.createPane('base').style.zIndex=200;map.createPane('bathymetry').style.zIndex=220;map.createPane('contours').style.zIndex=230;
-  const base=L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topograatone/default/webmercator/{z}/{y}/{x}.png',{pane:'base',maxZoom:18,attribution:'Kart og dybder © <a href="https://www.kartverket.no/">Kartverket</a>'}).addTo(map);
+  const base=L.tileLayer('https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/{z}/{y}/{x}.png',{pane:'base',maxZoom:18,attribution:'Kart og dybder © <a href="https://www.kartverket.no/">Kartverket</a>'}).addTo(map);
   const wms='https://wms.geonorge.no/skwms1/wms.dybdedata2';
   depthLayer=L.tileLayer.wms(wms,{layers:'Dybdelag',format:'image/png',transparent:true,version:'1.1.1',pane:'bathymetry',attribution:'Dybder © Kartverket',tileSize:512});
   contourLayer=L.tileLayer.wms(wms,{layers:'Dybdekontur,Dybdepunkt,Kystkontur',format:'image/png',transparent:true,version:'1.1.1',pane:'contours',tileSize:512});

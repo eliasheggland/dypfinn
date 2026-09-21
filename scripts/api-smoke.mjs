@@ -45,7 +45,7 @@ await check('Kartverket tidevann',`https://vannstand.kartverket.no/tideapi.php?$
 await check('Kartverket dybdedata',`https://wms.geonorge.no/skwms1/wms.dybdedata2?${wmsArgs}`,{
   format:'text',validate:text=>assert.ok(text.includes('minimumsdybde')||text.includes('no features were found'),'dybdesvaret har ukjent format')
 });
-await check('Kartverket kartflis','https://cache.kartverket.no/v1/wmts/1.0.0/topograatone/default/webmercator/8/74/133.png',{
+await check('Kartverket kartflis','https://cache.kartverket.no/v1/wmts/1.0.0/topo/default/webmercator/8/74/133.png',{
   format:'binary',cors:false,validate:(body,response)=>{
     assert.ok(body.byteLength>1000,'kartflisen er tom');
     assert.match(response.headers.get('content-type')||'',/^image\//,'kartflisen er ikke et bilde');

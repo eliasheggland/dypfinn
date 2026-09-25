@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#0c2946"><meta name="description" content="Dypfinn viser analyserte fiskeområder i Austevoll med kartdybder, vær, vind, bølger, tidevann og driftplan.">
 <title>Dypfinn — Finn gode fiskeområder</title>
 <link rel="icon" href="./favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./vendor/leaflet.css"><link rel="stylesheet" href="./style.css?v=5">
-<link rel="stylesheet" href="./coastal.css?v=6"><link rel="stylesheet" href="./premium.css?v=20"><script defer src="./vendor/leaflet.js"></script><script type="module" src="./app.js?v=20"></script>
+<link rel="stylesheet" href="./coastal.css?v=6"><link rel="stylesheet" href="./premium.css?v=21"><script defer src="./vendor/leaflet.js"></script><script type="module" src="./app.js?v=21"></script>
 </head>
 <body class="auth-locked">
 <section class="auth-gate" id="auth-gate" aria-labelledby="auth-title">
@@ -56,7 +56,7 @@
 <div class="quick-species" aria-label="Velg fiskeart"><button data-species="all">Alle</button><button data-species="lyr">Lyr</button><button data-species="makrell">Makrell</button><button data-species="sei">Sei</button><button data-species="lange">Lange</button><button data-species="brosme">Brosme</button><button data-species="torsk">Torsk</button></div>
 <aside class="explorer" id="explorer" aria-label="Fiskeområder">
 <button class="sheet-handle mobile-only" data-action="collapse-list" aria-label="Trekk ned eller trykk for å lukke listen"><span></span></button>
-<div class="explorer-heading"><div><p class="eyebrow">FISKEPLASSER</p><h1>Velg en plass</h1></div><button class="icon-button mobile-only" data-action="collapse-list" aria-label="Skjul områdelisten"><span data-icon="chevron"></span></button></div>
+<div class="explorer-heading"><div><p class="eyebrow">FISKEPLASSER</p><h1 id="explorer-title">Fiskeplasser</h1></div><button class="icon-button mobile-only" data-action="collapse-list" aria-label="Skjul områdelisten"><span data-icon="chevron"></span></button></div>
 <label class="search-field"><span data-icon="search"></span><input id="search" type="search" placeholder="Søk art, område eller dybde" aria-label="Søk fiskeområder"><kbd>⌘ K</kbd></label>
 <div class="filter-toolbar"><button class="species-control" data-action="species"><span data-icon="fish"></span><span id="species-label">Alle arter</span><span data-icon="chevron"></span></button><button class="filter-control" data-action="filters"><span data-icon="filter"></span><span>Filter</span><i id="filter-count" hidden>0</i></button></div>
 <div class="area-tabs" role="tablist" aria-label="Områder"><button role="tab" aria-selected="true" data-list="all">Utforsk <span id="area-count">–</span></button><button role="tab" aria-selected="false" data-list="saved">Lagrede <span id="saved-tab-count">0</span></button></div>

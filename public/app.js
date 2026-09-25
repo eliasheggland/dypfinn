@@ -58,6 +58,7 @@ function renderResults(){
   results=filterAreas([...allAreas,...db.custom,...legacy],{...state,saved:db.saved});
   if(state.savedOnly){for(const a of db.custom.filter(s=>!s.depth&&db.saved.includes(s.id)))results.push({...a,distance:distance(state.center,a.coordinates),choices:[]});}
   $('#area-count').textContent=allAreas.length;$('#species-label').textContent=bySpecies(state.species)?.name||'Alle arter';
+  $('#explorer-title').textContent=state.savedOnly?'Lagrede plasser':state.species==='all'?'Fiskeplasser':`${bySpecies(state.species)?.name||'Valgte'}-plasser`;
   $('#result-label').textContent=`${results.length} ${state.savedOnly?'lagrede steder':'analyserte steder'} · ${state.savedOnly?'bare på denne enheten':'valgt fra sjøkartet'}`;
   $('#mobile-count').textContent=`Vis ${results.length} områder`;
   $$('.quick-species [data-species]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.species===state.species)));
@@ -476,7 +477,6 @@ async function startApp(){
   let tileFailure=false;depthLayer.on('tileerror',()=>{if(!tileFailure){tileFailure=true;notice('Dybdekartet kunne ikke lastes. Lagrede dybdeintervaller vises fortsatt.');}});
   map.on('moveend',()=>{renderMarkers();$('#map-coordinate').textContent=coords([map.getCenter().lat,map.getCenter().lng]);db.viewport={center:[map.getCenter().lat,map.getCenter().lng],zoom:map.getZoom()};Repository.save(db);});
   map.on('contextmenu',e=>inspectPoint([e.latlng.lat,e.latlng.lng]));
-  map.on('click',e=>inspectPoint([e.latlng.lat,e.latlng.lng]));
   const mapElement=$('#map');
   for(const eventName of ['gesturestart','gesturechange','gestureend'])mapElement.addEventListener(eventName,e=>e.preventDefault(),{passive:false});
   mapElement.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault();},{passive:false,capture:true});

@@ -72,6 +72,18 @@ button:hover:not(:disabled){filter:none}button:active:not(:disabled){transform:s
   .map-controls{top:140px}
 }
 @media(max-width:350px){.quick-species button,.quick-species button:nth-child(n+4){padding-inline:8px;font-size:10px}.map-controls{top:136px}}
+
+/* Final usability pass: one clear way to choose an art, then one clear list. */
+.quick-species{left:350px;right:82px;max-width:none;overflow:visible;flex-wrap:wrap;gap:4px}
+.quick-species button{min-height:36px;padding-inline:12px;font-weight:700}
+.species-control{display:none!important}.filter-toolbar{padding-top:8px}.filter-control{flex:1;justify-content:center}.filter-control .icon{color:#167c78}
+.area-tabs{margin-top:1px}.list-label{padding-top:9px}.explorer-heading h1{line-height:1.15}
+@media(max-width:700px){
+  .quick-species{left:9px;right:9px;display:flex;flex-wrap:wrap;gap:5px;overflow:visible;padding:0;background:transparent}
+  .quick-species button,.quick-species button:nth-child(n+4){display:inline-flex!important;align-items:center;justify-content:center;min-height:32px;padding:0 10px;font-size:11px;font-weight:700}
+  .map-controls{top:140px}
+  .list-open .filter-toolbar{padding:8px 14px 4px}.list-open .filter-control{min-height:38px}.list-open .area-tabs{padding-top:2px}
+}
 @media(prefers-reduced-motion:reduce){button{transition:none}}
 
 /* Readability and touch comfort */

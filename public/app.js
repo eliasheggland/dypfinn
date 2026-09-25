@@ -178,8 +178,8 @@ function showConditions(){
   const latest=Math.max(Date.now(),...allTimes),lastHour=Math.max(24,Math.floor((latest-Date.now())/3600000));
   const hours=[];for(let h=0;h<=lastHour;h+=h<24?3:6)hours.push(h);
   if(hours.at(-1)!==lastHour)hours.push(lastHour);
-  const cards=hours.map(h=>{const c=ConditionsService.at(state.bundle,h),when=c.time?new Date(c.time):null,day=when?when.toLocaleDateString('nb-NO',{weekday:'short',day:'numeric',month:'short'}):'–';return `<button class="forecast-card ${h===state.hours?'active':''}" data-hour="${h}" aria-label="${h===0?'Nå':'+ '+h+' timer'}: ${num(c.waves)} meter bølge, ${num(c.wind)} meter per sekund vind og ${num(c.rain)} millimeter regn"><time><strong>${h===0?'Nå':hh(c.time)}</strong><small>${day}</small></time><span><i>Bølge</i><b>${c.waves===undefined?'–':num(c.waves)+' m'}</b></span><span><i>Vind</i><b>${c.wind===undefined?'–':num(c.wind)+' m/s'}</b></span><span><i>Regn</i><b>${c.rain===undefined?'–':num(c.rain)+' mm'}</b></span></button>`;}).join('');
-  modal('Værvarsel · '+(selectedArea()?.name||'kartet'),`<p class="forecast-intro">Bølge, vind og regn ved denne plassen. Bla sidelengs for resten av varselet.</p><div class="forecast-strip" aria-label="Værvarsel fremover">${cards}</div><p class="source-caption">Bølger er signifikant bølgehøyde. Varslet er fra MET Norge og oppdateres når du åpner appen.</p>`,`<button class="secondary" data-action="refresh-weather">Oppdater</button><button class="primary" data-action="close-dialog">Ferdig</button>`,'conditions');
+  const slider=(label,key,unit)=>`<section class="forecast-slider"><div class="forecast-slider-head"><strong>${label}</strong><span>Trykk på tidspunkt</span></div><div class="forecast-track" role="group" aria-label="${label} fremover">${hours.map(h=>{const c=ConditionsService.at(state.bundle,h),value=c[key],time=h===0?'Nå':hh(c.time);return `<button class="forecast-stop ${h===state.hours?'active':''}" data-hour="${h}" aria-label="${label} ${time}: ${value===undefined?'mangler':num(value)+' '+unit}"><small>${time}</small><b>${value===undefined?'–':num(value)+' '+unit}</b></button>`;}).join('')}</div></section>`;
+  modal('Værvarsel · '+(selectedArea()?.name||'kartet'),`<p class="forecast-intro">Tre enkle tidslinjer for denne plassen. Bla sidelengs for resten av varselet.</p>${slider('Bølger','waves','m')}${slider('Vind','wind','m/s')}${slider('Regn','rain','mm')}<p class="source-caption">Bølger er signifikant bølgehøyde. Varslet er fra MET Norge og oppdateres når du åpner appen.</p>`,`<button class="secondary" data-action="refresh-weather">Oppdater</button><button class="primary" data-action="close-dialog">Ferdig</button>`,'conditions');
 }
 
 function ruleCard(id,lat){
@@ -414,6 +414,7 @@ function setForecastHour(button){
   $$('[data-hour]').forEach(x=>x.classList.toggle('active',x===button));
   renderConditionPill();
   if($('#spot-weather'))$('#spot-weather').innerHTML=weatherInline();
+  renderMarkers();
   if(state.dialogKind==='conditions')showConditions();
 }
 // Keep the forecast selector responsive on mobile even when the map library

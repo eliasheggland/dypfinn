@@ -46,7 +46,7 @@ function commit(change){const next=structuredClone(db);change(next);if(!Reposito
 function updateCounts(){const saved=$('#saved-count');if(saved)saved.textContent=db.saved.length;$('#saved-tab-count').textContent=db.saved.length;const n=db.trip?.stops?.length||0;$('#trip-count').hidden=!n;$('#trip-count').textContent=n;}
 function notice(message){$('#map-notice').hidden=!message;$('#map-notice').textContent=message||'';}
 function modal(title,body,footer='',kind='generic'){
-  state.dialogKind=kind;$('#dialog-content').innerHTML=`<div class="dialog-head"><h2 id="dialog-title">${title}</h2><button class="icon-button" data-action="close-dialog" aria-label="Lukk">${icon('close')}</button></div><div class="dialog-body">${body}</div>${footer?`<div class="dialog-footer">${footer}</div>`:''}`;
+  state.dialogKind=kind;$('#dialog').dataset.kind=kind;$('#dialog-content').innerHTML=`<div class="dialog-head"><h2 id="dialog-title">${title}</h2><button class="icon-button" data-action="close-dialog" aria-label="Lukk">${icon('close')}</button></div><div class="dialog-body">${body}</div>${footer?`<div class="dialog-footer">${footer}</div>`:''}`;
   $('#dialog').setAttribute('aria-labelledby','dialog-title');if(!$('#dialog').open)$('#dialog').showModal();
 }
 function closeModal(){state.dialogKind=null;state.analysis++;$('#dialog').close();}

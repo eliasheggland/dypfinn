@@ -82,6 +82,10 @@ button:hover:not(:disabled){filter:none}button:active:not(:disabled){transform:s
 .forecast-intro{margin:0 0 16px;color:#5d727b;font-size:13px;line-height:1.45}.forecast-slider+.forecast-slider{margin-top:17px}.forecast-slider-head{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 7px}.forecast-slider-head strong{font-size:14px;color:#183f51}.forecast-slider-head span{font-size:10px;color:#7a8d94}.forecast-track{display:flex;gap:0;overflow-x:auto;padding:7px 0 10px;border-radius:10px;background:linear-gradient(#e2e9e9,#e2e9e9) center 28px/100% 2px no-repeat;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}.forecast-stop{position:relative;display:grid;gap:5px;place-items:center;min-width:58px;padding:0 5px;background:transparent;scroll-snap-align:start}.forecast-stop:before{content:'';width:10px;height:10px;border:2px solid #fff;border-radius:50%;background:#aebfc3;box-shadow:0 0 0 1px #aebfc3}.forecast-stop.active:before{background:#167c78;box-shadow:0 0 0 3px #167c7822}.forecast-stop small{font-size:10px;color:#788c93}.forecast-stop b{font-size:11px;white-space:nowrap;color:#315964}.forecast-stop.active b{color:#0d7470}.mobile-results{bottom:14px}.map-coordinate{bottom:18px}.depth-key{bottom:24px}
 @media(max-width:700px){.spot-label{min-width:156px}.spot-metrics b{font-size:9px}.forecast-intro{font-size:12px}.forecast-track{margin-right:-2px}.forecast-stop{min-width:55px}.mobile-results{bottom:12px}.map-coordinate,.depth-key{display:none}}
 
+/* The weather forecast is deliberately wide: timelines need room, not height. */
+.dialog[data-kind="conditions"]{width:min(calc(100vw - 48px),1240px)}.dialog[data-kind="conditions"] .dialog-body{padding-inline:28px}.dialog[data-kind="conditions"] .forecast-track{min-width:100%}
+@media(max-width:700px){.dialog[data-kind="conditions"]{width:100vw}.dialog[data-kind="conditions"] .dialog-body{padding-inline:19px}}
+
 /* Final usability pass: one clear way to choose an art, then one clear list. */
 .quick-species{left:350px;right:82px;max-width:none;overflow:visible;flex-wrap:wrap;gap:4px}
 .quick-species button{min-height:36px;padding-inline:12px;font-weight:700}

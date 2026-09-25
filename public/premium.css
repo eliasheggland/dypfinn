@@ -64,6 +64,14 @@ button:hover:not(:disabled){filter:none}button:active:not(:disabled){transform:s
 /* Species are the primary map entry point: every target stays one tap away. */
 .quick-species{display:flex;align-items:center;overflow-x:auto;scrollbar-width:none;overscroll-behavior-x:contain}.quick-species::-webkit-scrollbar{display:none}.quick-species button{flex:0 0 auto}.quick-species button:nth-child(n+4){display:inline-flex}
 @media(max-width:700px){.quick-species{right:8px;padding-right:8px}.quick-species button{font-weight:700}}
+
+/* Keep every target fish visible on a phone; never hide later chips. */
+@media(max-width:700px){
+  .quick-species{left:9px;right:9px;display:flex;flex-wrap:wrap;gap:5px;overflow:visible;padding:0;background:transparent}
+  .quick-species button,.quick-species button:nth-child(n+4){display:inline-flex!important;align-items:center;justify-content:center;min-height:32px;padding:0 10px;font-size:11px;font-weight:700}
+  .map-controls{top:140px}
+}
+@media(max-width:350px){.quick-species button,.quick-species button:nth-child(n+4){padding-inline:8px;font-size:10px}.map-controls{top:136px}}
 @media(prefers-reduced-motion:reduce){button{transition:none}}
 
 /* Readability and touch comfort */
@@ -138,3 +146,11 @@ body{letter-spacing:-.012em}.workspace{background:#f6f8fa}.topbar{height:60px;pa
   .list-open .explorer{top:14%;border-radius:18px 18px 0 0;box-shadow:0 -8px 24px #0c263318}.list-open .explorer-heading{padding:6px 16px}.list-open .explorer h1{font-size:19px}.list-open .filter-toolbar{padding:7px 14px}.list-open .filter-toolbar button{height:40px;border-radius:8px}.list-open .area-tabs{padding-inline:14px}.list-open .area-card{min-height:72px;padding:10px 8px;border-radius:8px}.list-open .area-number{width:28px;height:28px}.list-open .area-name{font-size:13px}.list-open .area-region,.list-open .area-meta{font-size:11px}
   .detail-panel{max-height:64%;border-radius:18px 18px 0 0;box-shadow:0 -8px 24px #0c26331c}.detail-header{padding:4px 16px 9px}.detail-header h2{font-size:20px}.detail-scroll{padding:11px 16px}.detail-actions{padding:8px 9px;background:#fff}.detail-actions button{min-height:42px;border-radius:9px}.place-facts .data-tile{min-height:54px}.place-details summary{min-height:44px;display:flex;align-items:center}
 }
+
+/* Final mobile override: all six target species must remain visible. */
+@media(max-width:700px){
+  .quick-species{left:9px;right:9px;display:flex;flex-wrap:wrap;gap:5px;overflow:visible;padding:0;background:transparent}
+  .quick-species button,.quick-species button:nth-child(n+4){display:inline-flex!important;align-items:center;justify-content:center;min-height:32px;padding:0 10px;font-size:11px;font-weight:700}
+  .map-controls{top:140px}
+}
+@media(max-width:350px){.quick-species button,.quick-species button:nth-child(n+4){padding-inline:8px;font-size:10px}.map-controls{top:136px}}

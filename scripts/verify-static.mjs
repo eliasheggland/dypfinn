@@ -15,7 +15,8 @@ assert.ok(!html.match(/(?:href|src)="\/(?!\/)/),'Bruk relative filbaner slik at 
 assert.match(html,/<title>Dypfinn/);
 assert.match(html,/id="auth-gate"/,'Innloggingsporten må vises før appen.');
 assert.match(html,/id="app" hidden/,'Kartet må være skjult frem til brukeren er innlogget.');
-assert.match(html,/class="mobile-gps"/,'Mobilkartet må ha en synlig GPS-kontroll.');
+assert.doesNotMatch(html,/class="mobile-gps"/,'Mobilkartet skal ha én GPS-kontroll, ikke en ekstra bannerknapp.');
+assert.doesNotMatch(html,/id="conditions-pill"/,'Værforhold skal vises i valgt stedsdetalj, ikke som et ekstra kartbanner.');
 
 const authSource=await readFile(resolve(root,'auth.js'),'utf8');
 const appSource=await readFile(resolve(root,'app.js'),'utf8');

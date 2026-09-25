@@ -36,6 +36,7 @@ const tile=(label,value)=>`<div class="data-tile"><small>${label}</small><strong
 const terrainName=kind=>({Toppkant:'Grunnskulder',Dypkant:'Dypvannskant',Dybdeovergang:'Dybdeskift',Rennekant:'Rennekant'}[kind]||kind||'Egen plass');
 const empty=(title,copy,action='')=>`<div class="empty">${icon('map')}<h3>${title}</h3><p>${copy}</p>${action}</div>`;
 let db=Repository.load(),map,catalog,allAreas=[],results=[],markers,structureLayer,selectionLayer,driftLayer,tripLayer,locationLayer,profileDot,depthLayer,contourLayer;
+const markerForecasts=new Map(),markerForecastPending=new Set();
 const preferredSpecies=SPECIES.some(s=>s.id===db.preferences.species)?db.preferences.species:'all';
 const state={page:'kart',species:preferredSpecies,collectionChosen:preferredSpecies!=='all',region:'all',depth:'all',kind:'all',radius:0,center:[60.08,5.02],query:'',savedOnly:false,selected:null,hours:0,bundle:null,weatherRequest:0,session:null,location:null,catchFilter:'all',dialogKind:null,analysis:0};
 let toastTimer,sessionTimer,photoData=null,editingCatch=null,appStarted=false,gpsRequest=false;
@@ -99,9 +100,20 @@ function renderMarkers(){
     if(labelled)labels.push(p);
     if(a.id!==state.selected)addFishingZone(a);
     if(!labelled)return;
-    const html=`<div class="spot-label ${state.selected===a.id?'selected':''}"><span class="score">${icon('fish')}</span><span><span class="spot-fish">${terrainName(a.kind)}</span><span class="spot-depth">${depthLabel(a.depth)}</span></span></div>`;
-    L.marker(a.coordinates,{icon:L.divIcon({className:'spot-icon',html,iconSize:labelled?[140,48]:[36,36],iconAnchor:labelled?[16,52]:[18,18]}),title:`${a.name} · ${depthLabel(a.depth)} · ${a.fish?.name||'Egen plass'}`,alt:a.name,zIndexOffset:a.id===state.selected?1000:labelled?100:0}).addTo(markers).on('click',()=>selectSpot(a.id));
+    const weather=markerWeather(a);
+    const metric=(label,value)=>`<span><small>${label}</small><b>${value}</b></span>`;
+    const html=`<div class="spot-label ${state.selected===a.id?'selected':''}"><span class="spot-metrics">${metric('Bølge',weather?.waves===undefined?'–':num(weather.waves)+' m')}${metric('Vind',weather?.wind===undefined?'–':num(weather.wind)+' m/s')}${metric('Regn',weather?.rain===undefined?'–':num(weather.rain)+' mm')}</span><span class="spot-name">${esc(a.name)}</span><span class="spot-depth">${depthLabel(a.depth)}</span></div>`;
+    L.marker(a.coordinates,{icon:L.divIcon({className:'spot-icon',html,iconSize:labelled?[164,86]:[36,36],iconAnchor:labelled?[16,90]:[18,18]}),title:`${a.name} · ${depthLabel(a.depth)} · ${a.fish?.name||'Egen plass'}`,alt:a.name,zIndexOffset:a.id===state.selected?1000:labelled?100:0}).addTo(markers).on('click',()=>selectSpot(a.id));
   });
+}
+function markerWeather(area){
+  const cached=markerForecasts.get(area.id);
+  if(cached)return ConditionsService.at(cached,state.hours);
+  if(!markerForecastPending.has(area.id)){
+    markerForecastPending.add(area.id);
+    ConditionsService.load(area.coordinates).then(bundle=>{markerForecasts.set(area.id,bundle);markerForecastPending.delete(area.id);renderMarkers();}).catch(()=>markerForecastPending.delete(area.id));
+  }
+  return null;
 }
 function fitResults(){if(!results.length||!map)return;const mobile=innerWidth<701;map.fitBounds(L.latLngBounds(results.map(s=>s.coordinates)),{paddingTopLeft:mobile?[35,185]:[390,60],paddingBottomRight:mobile?[40,145]:[130,120],maxZoom:13,animate:false});}
 function closeDetail(){state.selected=null;$('#detail-panel').hidden=true;$('#detail-panel').classList.remove('expanded');$('#map-surface').classList.remove('detail-open');selectionLayer?.clearLayers();driftLayer?.clearLayers();profileDot?.remove();renderResults();loadConditions(state.center);}
@@ -158,21 +170,16 @@ function weatherInline(){
   const place=selectedArea(),matches=!place||state.bundle?.coordinates&&distance(place.coordinates,state.bundle.coordinates)<10;
   if(!matches)return `<span class="weather-place">Forhold ved ${esc(place.name)}</span><span class="weather-reading">Henter oppdatert varsel…</span>`;
   const c=ConditionsService.at(state.bundle,state.hours),name=place?`Forhold ved ${esc(place.name)}`:'Forhold ved kartet';
-  return `<span class="weather-place">${name}</span><span class="weather-reading">${num(c.wind)} m/s vind · ${num(c.waves)} m sjø</span><button data-action="conditions">Se detaljer</button>`;
+  return `<span class="weather-place">${name}</span><span class="weather-reading">${num(c.waves)} m bølge · ${num(c.wind)} m/s vind · ${num(c.rain)} mm regn</span><button data-action="conditions">Værvarsel</button>`;
 }
 function renderConditionPill(){const summary=$('#condition-summary');if(!summary)return;const c=ConditionsService.at(state.bundle,state.hours);summary.textContent=c.wind!==undefined?`${num(c.wind)} m/s ${compass(c.windFrom)} · ${c.waves!==undefined?num(c.waves)+' m sjø':'sjøvarsel mangler'}${state.hours?' · +'+state.hours+' t':''}`:'Værdata utilgjengelig';}
 function showConditions(){
-  const c=ConditionsService.at(state.bundle,state.hours),hourly=[0,3,6,9,12,15,18,21].map(h=>ConditionsService.at(state.bundle,h));
-  const chart=hourly.map(x=>`<div class="hour-column"><span>${hh(x.time)}</span><i style="height:${Math.max(2,(x.wind||0)*5)}px"></i><strong>${num(x.wind)}</strong></div>`).join('');
-  const oceanPoint=state.bundle?.ocean?.geometry?.coordinates;
-  const modelDistance=oceanPoint&&state.bundle?distance(state.bundle.coordinates,[oceanPoint[1],oceanPoint[0]]):null;
-  modal('Vær og sjø · '+(selectedArea()?.name||'søkesenter'),`<p class="hint" style="margin-top:0">MET Norge · prognose for ${c.time?date(c.time)+' kl. '+hh(c.time):'valgt tidspunkt'}<br>${coords(state.bundle?.coordinates||state.center)}</p>
-  <div class="weather-source-status"><span class="${c.wind===undefined?'unavailable':''}">MET vær · ${c.wind===undefined?'mangler':'tilkoblet'}</span><span class="${c.waves===undefined?'unavailable':''}">MET hav · ${c.waves===undefined?'mangler':'tilkoblet'}</span><span class="${c.tide.level===undefined?'unavailable':''}">Kartverket tidevann · ${c.tide.level===undefined?'mangler':'tilkoblet'}</span></div><div class="weather-grid">${tile('Vind',num(c.wind)+' <small>m/s</small>')}${tile('Bølgehøyde',num(c.waves)+' <small>m</small>')}${tile('Sjøtemperatur',num(c.seaTemp)+' <small>°C</small>')}${tile('Strøm',num(c.current,2)+' <small>m/s</small>')}${tile('Lufttemperatur',num(c.temp)+' <small>°C</small>')}${tile('Trykk',num(c.pressure,0)+' <small>hPa</small>')}${tile('Vindkast',num(c.gust)+' <small>m/s</small>')}${tile('Nedbør neste time',num(c.rain)+' <small>mm</small>')}${tile('Bølger fra',c.waveFrom===undefined?'–':compass(c.waveFrom)+' · '+num(c.waveFrom,0)+'°')}</div>
-  <h3 class="section-title">Flo og fjære <span>ASTRONOMISK TIDEVANN</span></h3><div class="data-grid">${tile('Beregnet nivå',num(c.tide.level,0)+' cm')}${tile('Utvikling',c.tide.trend||'Ukjent')}${c.tide.events.map(e=>tile(e.kind+' ca.',hh(e.time))).join('')}</div><p class="hint">${c.tide.station?'Tidevannssone: '+esc(c.tide.station)+'. ':''}Nivå over sjøkartnull. Tidene er omtrentlige (10-minutters prøver). Værets bidrag til vannstanden inngår ikke. Tidevannshøyde er ikke lokal strømfart.</p>
-  ${c.waves>db.boat.waveLimit?`<div class="status-box caution">Varslet bølgehøyde overstiger din valgte grense på ${num(db.boat.waveLimit)} m.</div>`:''}
-  <h3 class="section-title">Vind de neste 24 timene <span>m/s</span></h3><div class="hourly-chart">${chart}</div>
-  <p class="hint">Vind fra ${c.windFrom===undefined?'ukjent retning':compass(c.windFrom)}. ${c.currentTo===undefined?'Detaljert strømdata er ikke tilgjengelig her.':`Modellert strøm mot ${compass(c.currentTo)}. Lokal strøm kan avvike.`} Bølger er signifikant bølgehøyde; enkeltbølger kan være høyere.</p>
-  <p class="source-caption">Værmodell oppdatert: ${c.weatherUpdated?date(c.weatherUpdated)+' '+hh(c.weatherUpdated):'utilgjengelig'}.<br>Havmodell oppdatert: ${c.oceanUpdated?date(c.oceanUpdated)+' '+hh(c.oceanUpdated):'utilgjengelig'}.<br>${c.oceanTime?'Havvarsel gjelder '+hh(c.oceanTime)+'.':''} Hentet ${state.bundle?.fetched?hh(state.bundle.fetched):'–'}. Oppdateres hvert 5. minutt mens appen er synlig. Dette er prognoser, ikke lokale målinger. Havmodellen bruker nærmeste tilgjengelige sjøcelle${modelDistance!==null?' ('+formatDistance(modelDistance)+' fra valgt punkt)':''}; små sund og strøm ved bunnen kan avvike.</p>`, `<button class="secondary" data-action="refresh-weather">Oppdater</button><button class="primary" data-action="close-dialog">Til kartet</button>`,'conditions');
+  const allTimes=[...(state.bundle?.weather?.properties?.timeseries||[]),...(state.bundle?.ocean?.properties?.timeseries||[])].map(x=>Date.parse(x.time)).filter(Number.isFinite);
+  const latest=Math.max(Date.now(),...allTimes),lastHour=Math.max(24,Math.floor((latest-Date.now())/3600000));
+  const hours=[];for(let h=0;h<=lastHour;h+=h<24?3:6)hours.push(h);
+  if(hours.at(-1)!==lastHour)hours.push(lastHour);
+  const cards=hours.map(h=>{const c=ConditionsService.at(state.bundle,h),when=c.time?new Date(c.time):null,day=when?when.toLocaleDateString('nb-NO',{weekday:'short',day:'numeric',month:'short'}):'–';return `<button class="forecast-card ${h===state.hours?'active':''}" data-hour="${h}" aria-label="${h===0?'Nå':'+ '+h+' timer'}: ${num(c.waves)} meter bølge, ${num(c.wind)} meter per sekund vind og ${num(c.rain)} millimeter regn"><time><strong>${h===0?'Nå':hh(c.time)}</strong><small>${day}</small></time><span><i>Bølge</i><b>${c.waves===undefined?'–':num(c.waves)+' m'}</b></span><span><i>Vind</i><b>${c.wind===undefined?'–':num(c.wind)+' m/s'}</b></span><span><i>Regn</i><b>${c.rain===undefined?'–':num(c.rain)+' mm'}</b></span></button>`;}).join('');
+  modal('Værvarsel · '+(selectedArea()?.name||'kartet'),`<p class="forecast-intro">Bølge, vind og regn ved denne plassen. Bla sidelengs for resten av varselet.</p><div class="forecast-strip" aria-label="Værvarsel fremover">${cards}</div><p class="source-caption">Bølger er signifikant bølgehøyde. Varslet er fra MET Norge og oppdateres når du åpner appen.</p>`,`<button class="secondary" data-action="refresh-weather">Oppdater</button><button class="primary" data-action="close-dialog">Ferdig</button>`,'conditions');
 }
 
 function ruleCard(id,lat){
@@ -199,6 +206,7 @@ function chooseSpecies(id,{showPlaces=false}={}){
   if(showPlaces&&state.selected)closeDetail();else renderResults();
   if(!showPlaces&&state.selected){renderDetail();drawSelection(selectedArea());}
   if(showPlaces){$('#map-surface').classList.add('list-open');fitResults();}
+  else{$('#map-surface').classList.remove('list-open');fitResults();}
   toast(`${bySpecies(id)?.name||'Alle arter'} · ${results.length} aktuelle områder`);
 }
 function showFilters(){
@@ -406,6 +414,7 @@ function setForecastHour(button){
   $$('[data-hour]').forEach(x=>x.classList.toggle('active',x===button));
   renderConditionPill();
   if($('#spot-weather'))$('#spot-weather').innerHTML=weatherInline();
+  if(state.dialogKind==='conditions')showConditions();
 }
 // Keep the forecast selector responsive on mobile even when the map library
 // consumes a synthetic click after a touch gesture.
@@ -422,7 +431,7 @@ document.addEventListener('click',async e=>{
     if(b.dataset.action&&actions[b.dataset.action])await actions[b.dataset.action]();
     if(b.dataset.page){if($('#dialog').open)closeModal();showPage(b.dataset.page);}
     if(b.dataset.spot){closeModal();selectSpot(b.dataset.spot);}
-    if(b.dataset.species)chooseSpecies(b.dataset.species,{showPlaces:Boolean(b.closest('.quick-species'))});
+    if(b.dataset.species)chooseSpecies(b.dataset.species);
     if(b.dataset.guide)showSpeciesGuide(b.dataset.guide);
     if(b.dataset.list){state.savedOnly=b.dataset.list==='saved';renderResults();}
     if(b.dataset.hour)setForecastHour(b);

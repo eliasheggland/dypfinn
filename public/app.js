@@ -2,6 +2,7 @@ import {fishingRule} from './rules.js?v=6';
 import {SPECIES,bySpecies,distance,bearing,offset,suitability,candidates,filterAreas,driftPlan,planTrip,depthLabel,formatDistance,compass} from './model.js?v=6';
 import {BathymetryService,ConditionsService,Repository} from './services.js?v=6';
 import {AuthService} from './auth.js?v=3';
+import {curateSpots} from './curated-spots.js?v=1';
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -52,7 +53,7 @@ function enriched(area){if(!area)return null;let choices=candidates(area);const 
 function selectedArea(){return enriched(areaById(state.selected));}
 
 function renderResults(){
-  const legacy=state.savedOnly?(catalog?.legacySpots||[]).filter(a=>db.saved.includes(a.id)):[];
+  const legacy=state.savedOnly?(catalog?.legacySpots||[]).filter(a=>db.saved.includes(a.id)&&!allAreas.some(current=>current.id===a.id)):[];
   results=filterAreas([...allAreas,...db.custom,...legacy],{...state,saved:db.saved});
   if(state.savedOnly){for(const a of db.custom.filter(s=>!s.depth&&db.saved.includes(s.id)))results.push({...a,distance:distance(state.center,a.coordinates),choices:[]});}
   $('#area-count').textContent=allAreas.length;$('#species-label').textContent=bySpecies(state.species)?.name||'Alle arter';
@@ -118,7 +119,7 @@ function renderDetail(){
   const why=a.custom?'Egen kartplass. Kartverket oppgir dybdeintervallet nedenfor. Terrenget rundt er ikke analysert.':a.analysis?.summary||`${terrainName(a.kind)} med ${depthLabel(a.depth)} ved markøren. Grovt kartlagt område fra en tidligere analyse.`;
   $('#detail-panel').hidden=false;$('#detail-panel').innerHTML=`<button class="sheet-handle mobile-only" data-action="expand-detail" aria-label="Utvid eller minimer stedsdetaljer"><span></span></button><div class="detail-header"><div><p class="eyebrow">${a.custom?'DIN PLASS':'ANALYSERT FRA SJØKART'}</p><h2>${esc(a.name)}</h2><p class="detail-subtitle">${esc(a.region)} · ${formatDistance(a.distance)} fra kartets sentrum</p></div><button class="icon-button" data-action="close-detail" aria-label="Lukk stedsdetaljer">${icon('close')}</button></div>
   <div class="detail-scroll"><div class="detail-hero"><div class="depth-reading"><span>Kartdybde</span><strong>${depthLabel(a.depth)}</strong></div><div class="place-kind">${esc(terrainName(a.kind))}</div></div>
-  <div class="weather-inline" id="spot-weather">${weatherInline()}</div><section class="place-section"><p class="section-kicker">MULIGE ARTER</p><div class="fish-tags">${a.choices.map(c=>`<button class="fish-tag" data-guide="${c.species.id}">${c.species.name}</button>`).join('')||'<span class="muted">Ingen vurdering uten dybdedata</span>'}</div></section>
+  <div class="weather-inline" id="spot-weather">${weatherInline()}</div><section class="place-section"><p class="section-kicker">PRIORITERT FOR</p><div class="fish-tags">${(a.focus||a.choices.map(c=>c.species.id)).map(id=>bySpecies(id)).filter(Boolean).map(f=>`<button class="fish-tag" data-guide="${f.id}">${f.name}</button>`).join('')||'<span class="muted">Ingen vurdering uten dybdedata</span>'}</div><p class="hint">Prioriteringen er beregnet fra kartdybde og bunnform. Sjekk ekkolodd og forhold på stedet før du fisker.</p></section>
   <section class="place-section"><p class="section-kicker">DERFOR ER DEN VALGT</p><p class="body-copy">${why}</p><div class="place-facts">${tile('Bunnform',esc(terrainName(a.kind)))}${tile('Dybdefall',a.analysis?'Minst '+a.analysis.drop+' m':'Ikke bekreftet')}${tile('Datagrunnlag',a.analysis?a.analysis.sampleCount+' kartprøver':'Begrenset')}</div></section>
   <button class="secondary grow drift-button" data-action="drift">${icon('route')}Planlegg drift</button>
   <details class="place-details"><summary>Se bunndata, regler og koordinater</summary><div class="detail-disclosure"><h3 class="section-title">Bunnprofil</h3>${terrainChart(a)}${spotEvidence(a)}${fish?`<h3 class="section-title">${fish.name} · regler og tips</h3>${ruleCard(fish.id,a.coordinates[0])}<p class="body-copy">${fish.technique}</p><div class="data-grid">${tile('Agn',fish.bait)}${tile('Metode',fish.rig)}</div>`:''}<h3 class="section-title">Koordinater</h3><p class="body-copy num">${coords(a.coordinates)}</p><div class="inline-actions"><button class="text-link" data-action="copy-coordinates">Kopier</button><button class="text-link" data-action="navigate">Retning og avstand</button><button class="text-link" data-action="share-spot">Del</button></div><p class="detail-note">Dybder er kartintervaller, ikke ekkoloddmåling. Fisk og bunntype må bekreftes på stedet. <button class="text-link" data-action="sources">Datakilder</button></p></div></details></div>
@@ -460,7 +461,7 @@ async function startApp(){
   mapElement.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault();},{passive:false,capture:true});
   let pressTimer,touchStart;mapElement.addEventListener('touchstart',e=>{if(e.touches.length!==1){clearTimeout(pressTimer);touchStart=null;return;}touchStart=[e.touches[0].clientX,e.touches[0].clientY];const r=mapElement.getBoundingClientRect();pressTimer=setTimeout(()=>{const p=map.containerPointToLatLng([touchStart[0]-r.left,touchStart[1]-r.top]);inspectPoint([p.lat,p.lng]);},650);},{passive:true});
   mapElement.addEventListener('touchmove',e=>{if(!touchStart||e.touches.length!==1){clearTimeout(pressTimer);return;}if(Math.hypot(e.touches[0].clientX-touchStart[0],e.touches[0].clientY-touchStart[1])>10)clearTimeout(pressTimer);},{passive:true});mapElement.addEventListener('touchend',()=>{clearTimeout(pressTimer);touchStart=null;},{passive:true});
-  try{catalog=await BathymetryService.catalog();allAreas=catalog.spots;renderResults();if(!db.viewport)fitResults();}catch(err){$('#area-list').innerHTML=empty('Områdene kunne ikke lastes','Kontroller forbindelsen og prøv igjen.',`<button class="secondary" data-action="reload">Last på nytt</button>`);$('#map-loading').hidden=true;}
+  try{catalog=await BathymetryService.catalog();allAreas=curateSpots(catalog);renderResults();if(!db.viewport)fitResults();}catch(err){$('#area-list').innerHTML=empty('Områdene kunne ikke lastes','Kontroller forbindelsen og prøv igjen.',`<button class="secondary" data-action="reload">Last på nytt</button>`);$('#map-loading').hidden=true;}
   loadConditions(state.center);updateCounts();showPage(location.hash.slice(1)||'kart',false);const shared=new URLSearchParams(location.search).get('spot');if(shared&&allAreas.some(s=>s.id===shared))selectSpot(shared);
 }
 async function init(){

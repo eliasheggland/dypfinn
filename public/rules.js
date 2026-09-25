@@ -4,7 +4,7 @@ export const LAW_SOURCE='https://www.fiskeridir.no/yrkesfiske/j-meldinger/j-148-
 export const PROTECTED_SOURCE='https://www.fiskeridir.no/fritidsfiske/freda-og-delvis-freda-artar';
 // Recreational rod/handline fishing for personal consumption. Never a sale rule.
 const minimum={hyse:32,torsk:40,hvitting:32,lysing:30,rodspette:29,sandflyndre:23,skrubbe:20,piggvar:30,slettvar:30,lomre:25,glassvar:25,kveite:84};
-const noMinimum=new Set(['sei','lyr','brosme','steinbit','lange']);
+const noMinimum=new Set(['makrell','sei','lyr','brosme','steinbit','lange']);
 export function fishingRule(id,latitude=60.08,when=new Date()){
  const north=latitude>=62,md=(when.getUTCMonth()+1)*100+when.getUTCDate();
  let cm=minimum[id]??null,label=cm?`${cm} cm`:noMinimum.has(id)?'Ingen minstemål':'Se særregel',note='',blocked=false;

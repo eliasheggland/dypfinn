@@ -1,27 +1,14 @@
 import {fishingRule} from './rules.js';
 export const SPECIES = [
+  {id:'lyr',name:'Lyr',depth:[10,150],best:[40,100],structures:['Toppkant','Dybdeovergang'],bait:'Shad eller sluk',rig:'Lett jigg',technique:'Fisk langs kanten og over mulig hardbunn. Tilpass synketiden til dybden.',pelagic:false},
+  {id:'makrell',name:'Makrell',depth:[5,150],best:[15,70],structures:['Toppkant','Dybdeovergang','Rennekant'],bait:'Sluk, hekle eller små jigger',rig:'Hekle / lett sluk',technique:'Se etter byttefisk og aktivitet i de frie vannmassene. Kartdybden er bare et startpunkt; makrellen følger ikke bunnen.',pelagic:true},
+  {id:'sei',name:'Sei',depth:[10,300],best:[30,150],structures:['Toppkant','Rennekant'],bait:'Pilk eller shad',rig:'Pilk',technique:'Finn stimer på ekkoloddet og fisk gjennom det aktuelle vannlaget. Bunndyp er ikke fiskedybde.',pelagic:true},
   {id:'lange',name:'Lange',depth:[100,500],best:[180,350],structures:['Dypkant','Rennekant'],bait:'Makrellstrimmel eller hel agnfisk',rig:'Bunnmeite med slep',technique:'Før agnet rolig langs den dype siden av kanten. Bekreft bunnkontakt med ekkolodd.',pelagic:false},
   {id:'brosme',name:'Brosme',depth:[100,500],best:[170,350],structures:['Dypkant','Toppkant'],bait:'Makrell eller sild',rig:'Bunnmeite',technique:'Fisk kontrollert nær bunnen. Bunntypen her er ukjent; let etter hardbunn på ekkoloddet.',pelagic:false},
-  {id:'torsk',name:'Torsk',depth:[15,250],best:[40,150],structures:['Dybdeovergang','Toppkant'],bait:'Jigg eller agnfisk',rig:'Jigg / bunnmeite',technique:'Fisk over dybdeovergangen og søk etter byttefisk. Lokal bestand og sesong påvirker forekomsten.',pelagic:false},
-  {id:'sei',name:'Sei',depth:[10,300],best:[30,150],structures:['Toppkant','Rennekant'],bait:'Pilk eller shad',rig:'Pilk',technique:'Finn stimer på ekkoloddet og fisk gjennom det aktuelle vannlaget. Bunndyp er ikke fiskedybde.',pelagic:true},
-  {id:'lyr',name:'Lyr',depth:[10,150],best:[40,100],structures:['Toppkant','Dybdeovergang'],bait:'Shad eller sluk',rig:'Lett jigg',technique:'Fisk langs kanten og over mulig hardbunn. Tilpass synketiden til dybden.',pelagic:false},
-  {id:'kveite',name:'Kveite',depth:[20,400],best:[50,200],structures:['Dybdeovergang','Rennekant'],bait:'Stor shad eller agnfisk',rig:'Jigg / agnfisk',technique:'Fisk langs overgangen med rolig drift. Egnet bunntype må bekreftes lokalt.',pelagic:false},
-  {id:'hyse',name:'Hyse',depth:[30,300],best:[60,200],structures:['Dybdeovergang','Bunnområde'],bait:'Reke eller makrellstrimmel',rig:'Bunnmeite med små kroker',technique:'Fisk nær bunnen med korte løft. Bunntypen er ikke verifisert i kartgrunnlaget.',pelagic:false},
-  {id:'uer',name:'Uer',depth:[100,500],best:[200,400],structures:['Dypkant','Rennekant'],bait:'Små agnstrimler',rig:'Bunnmeite',technique:'Søk ved den dype kanten. Art, område og sesong må vurderes mot gjeldende fiskeregler.',pelagic:false},
-  {id:'steinbit',name:'Steinbit',depth:[20,300],best:[40,150],structures:['Toppkant','Dybdeovergang'],bait:'Skjell eller reke',rig:'Bunnmeite',technique:'Let etter stein og skjellbunn med ekkolodd. Bunntype er ikke kjent her.',pelagic:false},
-  {id:'hvitting',name:'Hvitting',depth:[10,200],best:[30,100],structures:['Dybdeovergang','Rennekant'],bait:'Reke eller små fiskestrimler',rig:'Lett bunnmeite',technique:'Søk langs bunnen med små agn. Undersøk om området har sand eller bløtbunn.',pelagic:false,substrate:'sand eller bløtbunn'},
-  {id:'lysing',name:'Lysing',depth:[40,500],best:[100,300],structures:['Dypkant','Rennekant'],bait:'Sild eller makrellstrimmel',rig:'Bunnmeite / agnfisk',technique:'Prøv agnfisk like over bunnen på den dype siden. Søk i flere vannlag etter byttefisk.',pelagic:false},
-  {id:'rodspette',name:'Rødspette',depth:[5,150],best:[10,50],structures:['Dybdeovergang'],bait:'Børstemark, reke eller skjell',rig:'Flyndretakkel',technique:'Fisk små agn over sandbunn. Kartet viser dybde, så sandbunnen må bekreftes lokalt.',pelagic:false,substrate:'sandbunn'},
-  {id:'sandflyndre',name:'Sandflyndre',depth:[5,100],best:[10,50],structures:['Dybdeovergang'],bait:'Reke eller børstemark',rig:'Lett flyndretakkel',technique:'Hold agnet nær bunnen og søk etter sandpartier på den grunnere siden.',pelagic:false,substrate:'sandbunn'},
-  {id:'skrubbe',name:'Skrubbe',depth:[2,60],best:[5,25],structures:['Dybdeovergang'],bait:'Børstemark eller reke',rig:'Lett bunnmeite',technique:'Let etter grunne sand- og mudderflater. Elvemunninger kan ha egne fredningssoner.',pelagic:false,substrate:'sand eller mudder'},
-  {id:'piggvar',name:'Piggvar',depth:[2,100],best:[5,40],structures:['Dybdeovergang'],bait:'Tynn fiskestrimmel eller liten agnfisk',rig:'Slep med agnfisk',technique:'Før agnet langs ren sandbunn med rolige bevegelser. En dybdekant alene bekrefter ikke egnet bunn.',pelagic:false,substrate:'sandbunn'},
-  {id:'slettvar',name:'Slettvar',depth:[5,100],best:[10,50],structures:['Dybdeovergang'],bait:'Fiskestrimmel',rig:'Flyndretakkel',technique:'Søk på sandflater med agn nær bunnen. Bekreft bunntypen før du prioriterer området.',pelagic:false,substrate:'sandbunn'},
-  {id:'breiflabb',name:'Breiflabb',depth:[20,500],best:[50,200],structures:['Dybdeovergang','Rennekant'],bait:'Agnfisk',rig:'Bunnmeite',technique:'Prøv langs bunnen ved overganger. Arten er vanskelig å lokalisere målrettet med stang, så dette er et mulig søkeområde.',pelagic:false,substrate:'egnet bunnflate'},
-  {id:'lomre',name:'Lomre',depth:[5,200],best:[20,80],structures:['Dybdeovergang'],bait:'Skjell eller reke',rig:'Flyndretakkel',technique:'Prøv små agn nær bunnen og undersøk grus- og skjellpartier.',pelagic:false,substrate:'grus eller skjellbunn'},
-  {id:'glassvar',name:'Glassvar',depth:[40,400],best:[80,200],structures:['Dybdeovergang','Rennekant'],bait:'Små fiskestrimler eller reke',rig:'Bunnmeite',technique:'Let på dypere bløtbunn. Hold agnet nær bunnen med korte løft.',pelagic:false,substrate:'bløtbunn'}
+  {id:'torsk',name:'Torsk',depth:[15,250],best:[40,150],structures:['Dybdeovergang','Toppkant'],bait:'Jigg eller agnfisk',rig:'Jigg / bunnmeite',technique:'Fisk over dybdeovergangen og søk etter byttefisk. Lokal bestand og sesong påvirker forekomsten.',pelagic:false}
 ];
 // Historic catches remain readable, but these species are no longer suggested.
-const legacySpecies=[{id:'makrell',name:'Makrell'},{id:'hestemakrell',name:'Hestemakrell'}];
+const legacySpecies=[{id:'hestemakrell',name:'Hestemakrell'}];
 export const bySpecies = id => SPECIES.find(s=>s.id===id)||legacySpecies.find(s=>s.id===id);
 export const clamp = (v,a,b)=>Math.min(b,Math.max(a,v));
 export function distance(a,b) {
@@ -50,12 +37,12 @@ export function suitability(spot,species) {
   return {score:species.pelagic?Math.min(72,score):species.substrate?Math.min(68,score):score,depth,structure,terrain};
 }
 export function candidates(spot) {
-  return SPECIES.map(species=>({species,...suitability(spot,species)})).filter(x=>x.score!==undefined).sort((a,b)=>b.score-a.score).slice(0,3);
+  return SPECIES.map(species=>({species,...suitability(spot,species)})).filter(x=>x.score!==undefined).sort((a,b)=>Number(Boolean(spot.focus?.includes(b.species.id)))-Number(Boolean(spot.focus?.includes(a.species.id)))||b.score-a.score).slice(0,3);
 }
 export function filterAreas(spots,{species='all',region='all',depth='all',kind='all',radius=0,center=[60.08,5.02],query='',savedOnly=false,saved=[],sort='recommended'}={}) {
   const q=query.trim().toLocaleLowerCase('nb');
 return spots.map(spot=>{let choices=candidates(spot);const fish=species==='all'?choices[0]?.species:bySpecies(species);const fit=suitability(spot,fish);if(species!=='all'&&fit)choices=[{species:fish,...fit},...choices.filter(c=>c.species.id!==species)].slice(0,3);return {...spot,fish,fit,distance:distance(center,spot.coordinates),choices};})
-    .filter(s=>s.fit && (region==='all'||s.region===region) && (kind==='all'||s.kind===kind) &&
+    .filter(s=>s.fit && (species==='all'||!s.focus||s.focus.includes(species)) && (region==='all'||s.region===region) && (kind==='all'||s.kind===kind) &&
       (depth==='all'||(depth==='shallow'?s.depth.min<100:depth==='middle'?s.depth.max>100&&s.depth.min<200:s.depth.max>=200)) &&
       (!radius||s.distance<=Number(radius)*1000) && (!savedOnly||saved.includes(s.id)) &&
       (!q||`${s.name} ${s.region} ${s.kind} ${s.choices.map(c=>c.species.name).join(' ')} ${s.depth.min} ${s.depth.max}`.toLocaleLowerCase('nb').includes(q)))

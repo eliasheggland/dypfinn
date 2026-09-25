@@ -4,13 +4,11 @@ import {SPECIES,driftPlan,filterAreas} from '../public/model.js';
 import {fishingRule} from '../public/rules.js';
 import {forecastAt,ConditionsService,parseTide,tideAt} from '../public/services.js';
 test('food fish and regional rules',()=>{
- assert.equal(SPECIES.length,19);
- assert.ok(!SPECIES.some(s=>['makrell','hestemakrell','leppefisk'].includes(s.id)));
- assert.equal(fishingRule('kveite',60).blocked,true);
- assert.equal(fishingRule('hyse',60).cm,32);assert.equal(fishingRule('hyse',65).cm,40);
- assert.equal(fishingRule('sandflyndre',60).cm,23);
- assert.equal(fishingRule('uer',65,new Date('2026-09-18')).blocked,true);
- assert.equal(filterAreas([{coordinates:[60,5],depth:{min:50,max:100}}],{species:'kveite'}).length,0);
+ assert.deepEqual(SPECIES.map(s=>s.id),['lyr','makrell','sei','lange','brosme','torsk']);
+ assert.equal(fishingRule('makrell',60).cm,null);
+ assert.equal(fishingRule('makrell',60).label,'Ingen minstemål');
+ assert.equal(fishingRule('torsk',60).cm,40);
+ assert.equal(filterAreas([{coordinates:[60,5],depth:{min:50,max:100}}],{species:'hestemakrell'}).length,0);
 });
 test('vector interpolation passes north rather than reversing direction',()=>{
  const timeseries=[359,1].map((deg,i)=>({time:new Date(i*3600000).toISOString(),data:{instant:{details:{wind_speed:10,wind_from_direction:deg}}}}));

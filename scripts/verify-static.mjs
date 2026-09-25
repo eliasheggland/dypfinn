@@ -4,7 +4,7 @@ import {resolve} from 'node:path';
 
 const root=resolve('public');
 const html=await readFile(resolve(root,'index.html'),'utf8');
-const required=['app.js','auth.js','firebase-config.js','model.js','rules.js','services.js','terrain.js','curated-spots.js','style.css','coastal.css','premium.css','favicon.svg','data/areas.json','vendor/leaflet.js','vendor/leaflet.css'];
+const required=['app.js','auth.js','firebase-config.js','model.js','rules.js','services.js','terrain.js','curated-spots.js','zones.js','style.css','coastal.css','premium.css','favicon.svg','data/areas.json','vendor/leaflet.js','vendor/leaflet.css'];
 
 for(const file of required)await access(resolve(root,file));
 

@@ -3,6 +3,7 @@ import {SPECIES,bySpecies,distance,bearing,offset,suitability,candidates,filterA
 import {BathymetryService,ConditionsService,Repository} from './services.js?v=6';
 import {AuthService} from './auth.js?v=3';
 import {curateSpots} from './curated-spots.js?v=1';
+import {fishingZone,zoneCopy} from './zones.js?v=1';
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -34,7 +35,7 @@ const coords=p=>`${p[0].toFixed(4)}° N · ${p[1].toFixed(4)}° Ø`;
 const tile=(label,value)=>`<div class="data-tile"><small>${label}</small><strong>${value}</strong></div>`;
 const terrainName=kind=>({Toppkant:'Grunnskulder',Dypkant:'Dypvannskant',Dybdeovergang:'Dybdeskift',Rennekant:'Rennekant'}[kind]||kind||'Egen plass');
 const empty=(title,copy,action='')=>`<div class="empty">${icon('map')}<h3>${title}</h3><p>${copy}</p>${action}</div>`;
-let db=Repository.load(),map,catalog,allAreas=[],results=[],markers,selectionLayer,driftLayer,tripLayer,locationLayer,profileDot,depthLayer,contourLayer;
+let db=Repository.load(),map,catalog,allAreas=[],results=[],markers,structureLayer,selectionLayer,driftLayer,tripLayer,locationLayer,profileDot,depthLayer,contourLayer;
 const state={page:'kart',species:SPECIES.some(s=>s.id===db.preferences.species)?db.preferences.species:'all',region:'all',depth:'all',kind:'all',radius:0,center:[60.08,5.02],query:'',savedOnly:false,selected:null,hours:0,bundle:null,weatherRequest:0,session:null,location:null,catchFilter:'all',dialogKind:null,analysis:0};
 let toastTimer,sessionTimer,photoData=null,editingCatch=null,appStarted=false,gpsRequest=false;
 
@@ -67,8 +68,18 @@ function renderResults(){
   updateCounts();renderMarkers();
 }
 function areaCard(a){return `<button class="area-card ${state.selected===a.id?'selected':''}" data-spot="${a.id}" aria-label="${esc(a.name)}, ${depthLabel(a.depth)}, ${a.fish?.name||'art ukjent'}"><span class="area-number">${icon('fish')}</span><span><span class="area-name">${esc(a.name)}</span><span class="area-region">${esc(a.region)} · ${formatDistance(a.distance)}</span><span class="area-meta"><strong>${depthLabel(a.depth)}</strong><i class="divider"></i>${a.choices.slice(0,2).map(c=>c.species.name).join(' · ')||'Egen plass'}</span>${a.analysis?`<span class="terrain-evidence">Min. ${a.analysis.drop} m dybdeforskjell · ${a.analysis.sampleCount} prøver</span>`:''}</span><span class="area-chevron">${db.saved.includes(a.id)?icon('bookmark'):icon('chevron')}</span></button>`;}
+function zoneStyle(area,{selected=false}={}){
+  const color={Toppkant:'#167c78',Rennekant:'#176bce',Dybdeovergang:'#8a61ca',Dypkant:'#0f5a92'}[area.kind]||'#176bce';
+  return {color,weight:selected?3:1.25,opacity:selected?1:.75,fillColor:color,fillOpacity:selected ? .24 : .11,className:`fishing-zone ${selected?'selected':''}`};
+}
+function addFishingZone(area,{selected=false}={}){
+  const zone=fishingZone(area),layer=L.polygon(zone.points,zoneStyle(area,{selected})).addTo(selected?selectionLayer:structureLayer);
+  layer.on('click',e=>{L.DomEvent.stopPropagation(e);selectSpot(area.id);});
+  layer.bindTooltip(`${area.name} · ${zoneCopy(area.kind)} · ${depthLabel(area.depth)}`,{sticky:true,direction:'top',opacity:.9});
+  return zone;
+}
 function renderMarkers(){
-  if(!map)return;markers.clearLayers();if(!db.preferences.layers.areas)return;
+  if(!map)return;markers.clearLayers();structureLayer?.clearLayers();if(!db.preferences.layers.areas)return;
   const visible=results.filter(s=>map.getBounds().pad(.12).contains(s.coordinates));
   const ordered=[...visible].sort((a,b)=>(b.id===state.selected?1:0)-(a.id===state.selected?1:0));
   const labels=[],pins=[];
@@ -81,7 +92,9 @@ function renderMarkers(){
     const clearOfPanels=mobile?(p.x>20&&p.x<size.x-150&&p.y>220&&p.y<size.y-155):(p.x>370&&p.x<size.x-(state.selected?405:180)&&p.y>190&&p.y<size.y-130);
     const labelled=a.id===state.selected||(labels.length<(mobile?4:6)&&free&&clearOfPanels);
     if(labelled)labels.push(p);
-    const html=labelled?`<div class="spot-label ${state.selected===a.id?'selected':''}"><span class="score">${icon('fish')}</span><span><span class="spot-fish">${terrainName(a.kind)}</span><span class="spot-depth">${depthLabel(a.depth)}</span></span></div>`:`<div class="fish-pin ${db.saved.includes(a.id)?'saved':''}">${icon('fish')}</div>`;
+    if(a.id!==state.selected)addFishingZone(a);
+    if(!labelled)return;
+    const html=`<div class="spot-label ${state.selected===a.id?'selected':''}"><span class="score">${icon('fish')}</span><span><span class="spot-fish">${terrainName(a.kind)}</span><span class="spot-depth">${depthLabel(a.depth)}</span></span></div>`;
     L.marker(a.coordinates,{icon:L.divIcon({className:'spot-icon',html,iconSize:labelled?[140,48]:[36,36],iconAnchor:labelled?[16,52]:[18,18]}),title:`${a.name} · ${depthLabel(a.depth)} · ${a.fish?.name||'Egen plass'}`,alt:a.name,zIndexOffset:a.id===state.selected?1000:labelled?100:0}).addTo(markers).on('click',()=>selectSpot(a.id));
   });
 }
@@ -93,7 +106,7 @@ function selectSpot(id,{pan=true}={}){
 }
 function drawSelection(a){
   selectionLayer.clearLayers();if(!a.depth)return;
-  L.circle(a.coordinates,{radius:a.analysis?.radius||140,color:'#176bce',weight:1,fillColor:'#176bce',fillOpacity:.04,dashArray:'4 8'}).addTo(selectionLayer);
+  addFishingZone(a,{selected:true});
   for(const p of a.analysis?.ring||[])if(p&&map.getZoom()>=15)L.circleMarker([p.lat,p.lon],{radius:4,color:'#74d8b7',weight:1,fillOpacity:.85}).addTo(selectionLayer).bindTooltip(`${depthLabel(p)} · kartprøve`);
   if(a.analysis?.profile)L.polyline(a.analysis.profile.filter(Boolean).map(p=>[p.lat,p.lon]),{color:'#edc779',weight:2,dashArray:'6 5'}).addTo(selectionLayer);
   if(a.deep){L.polyline([a.coordinates,[a.deep.lat,a.deep.lon]],{color:'#9bb9c6',weight:1.5,dashArray:'4 6'}).addTo(selectionLayer);L.circleMarker([a.deep.lat,a.deep.lon],{radius:4,color:'#aacbd1',fillOpacity:.9}).addTo(selectionLayer).bindTooltip(`${depthLabel(a.deep)} · dypere vann`,{direction:'top'});}
@@ -120,7 +133,7 @@ function renderDetail(){
   $('#detail-panel').hidden=false;$('#detail-panel').innerHTML=`<button class="sheet-handle mobile-only" data-action="expand-detail" aria-label="Utvid eller minimer stedsdetaljer"><span></span></button><div class="detail-header"><div><p class="eyebrow">${a.custom?'DIN PLASS':'ANALYSERT FRA SJØKART'}</p><h2>${esc(a.name)}</h2><p class="detail-subtitle">${esc(a.region)} · ${formatDistance(a.distance)} fra kartets sentrum</p></div><button class="icon-button" data-action="close-detail" aria-label="Lukk stedsdetaljer">${icon('close')}</button></div>
   <div class="detail-scroll"><div class="detail-hero"><div class="depth-reading"><span>Kartdybde</span><strong>${depthLabel(a.depth)}</strong></div><div class="place-kind">${esc(terrainName(a.kind))}</div></div>
   <div class="weather-inline" id="spot-weather">${weatherInline()}</div><section class="place-section"><p class="section-kicker">PRIORITERT FOR</p><div class="fish-tags">${(a.focus||a.choices.map(c=>c.species.id)).map(id=>bySpecies(id)).filter(Boolean).map(f=>`<button class="fish-tag" data-guide="${f.id}">${f.name}</button>`).join('')||'<span class="muted">Ingen vurdering uten dybdedata</span>'}</div><p class="hint">Prioriteringen er beregnet fra kartdybde og bunnform. Sjekk ekkolodd og forhold på stedet før du fisker.</p></section>
-  <section class="place-section"><p class="section-kicker">DERFOR ER DEN VALGT</p><p class="body-copy">${why}</p><div class="place-facts">${tile('Bunnform',esc(terrainName(a.kind)))}${tile('Dybdefall',a.analysis?'Minst '+a.analysis.drop+' m':'Ikke bekreftet')}${tile('Datagrunnlag',a.analysis?a.analysis.sampleCount+' kartprøver':'Begrenset')}</div></section>
+  <section class="place-section"><p class="section-kicker">DERFOR ER DEN VALGT</p><p class="body-copy">${why}</p><div class="place-facts">${tile('Fiskeflate',zoneCopy(a.kind))}${tile('Dybdefall',a.analysis?'Minst '+a.analysis.drop+' m':'Ikke bekreftet')}${tile('Datagrunnlag',a.analysis?a.analysis.sampleCount+' kartprøver':'Begrenset')}</div><p class="hint">Flaten i kartet viser anbefalt kast- eller driftområde langs terrengformen. Den er ikke en bekreftet posisjon for fisk.</p></section>
   <button class="secondary grow drift-button" data-action="drift">${icon('route')}Planlegg drift</button>
   <details class="place-details"><summary>Se bunndata, regler og koordinater</summary><div class="detail-disclosure"><h3 class="section-title">Bunnprofil</h3>${terrainChart(a)}${spotEvidence(a)}${fish?`<h3 class="section-title">${fish.name} · regler og tips</h3>${ruleCard(fish.id,a.coordinates[0])}<p class="body-copy">${fish.technique}</p><div class="data-grid">${tile('Agn',fish.bait)}${tile('Metode',fish.rig)}</div>`:''}<h3 class="section-title">Koordinater</h3><p class="body-copy num">${coords(a.coordinates)}</p><div class="inline-actions"><button class="text-link" data-action="copy-coordinates">Kopier</button><button class="text-link" data-action="navigate">Retning og avstand</button><button class="text-link" data-action="share-spot">Del</button></div><p class="detail-note">Dybder er kartintervaller, ikke ekkoloddmåling. Fisk og bunntype må bekreftes på stedet. <button class="text-link" data-action="sources">Datakilder</button></p></div></details></div>
   <div class="detail-actions"><button class="secondary" data-action="save-spot">${icon(db.saved.includes(a.id)?'check':'bookmark')}${db.saved.includes(a.id)?'Lagret':'Lagre'}</button><button class="secondary" data-action="add-trip">${icon('plus')}Til tur</button><button class="primary" data-action="start-fishing">${icon('fish')}Start fiske</button></div>`;
@@ -449,7 +462,7 @@ async function startApp(){
   const wms='https://wms.geonorge.no/skwms1/wms.dybdedata2';
   depthLayer=L.tileLayer.wms(wms,{layers:'Dybdelag',format:'image/png',transparent:true,version:'1.1.1',pane:'bathymetry',attribution:'Dybder © Kartverket',tileSize:512});
   contourLayer=L.tileLayer.wms(wms,{layers:'Dybdekontur,Dybdepunkt,Kystkontur',format:'image/png',transparent:true,version:'1.1.1',pane:'contours',tileSize:512});
-  markers=L.layerGroup().addTo(map);selectionLayer=L.layerGroup().addTo(map);driftLayer=L.layerGroup().addTo(map);tripLayer=L.layerGroup().addTo(map);locationLayer=L.layerGroup().addTo(map);
+  structureLayer=L.layerGroup().addTo(map);markers=L.layerGroup().addTo(map);selectionLayer=L.layerGroup().addTo(map);driftLayer=L.layerGroup().addTo(map);tripLayer=L.layerGroup().addTo(map);locationLayer=L.layerGroup().addTo(map);
   L.control.scale({imperial:false,maxWidth:85}).addTo(map);applyLayers();
   let loaded=0;base.on('tileload',()=>{loaded++;$('#map-loading').hidden=true;});base.on('tileerror',()=>{if(!loaded){$('#map-loading').textContent='Bakgrunnskartet svarer ikke. Prøv å laste siden på nytt.';}});
   let tileFailure=false;depthLayer.on('tileerror',()=>{if(!tileFailure){tileFailure=true;notice('Dybdekartet kunne ikke lastes. Lagrede dybdeintervaller vises fortsatt.');}});

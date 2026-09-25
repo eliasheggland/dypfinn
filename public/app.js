@@ -36,7 +36,8 @@ const tile=(label,value)=>`<div class="data-tile"><small>${label}</small><strong
 const terrainName=kind=>({Toppkant:'Grunnskulder',Dypkant:'Dypvannskant',Dybdeovergang:'Dybdeskift',Rennekant:'Rennekant'}[kind]||kind||'Egen plass');
 const empty=(title,copy,action='')=>`<div class="empty">${icon('map')}<h3>${title}</h3><p>${copy}</p>${action}</div>`;
 let db=Repository.load(),map,catalog,allAreas=[],results=[],markers,structureLayer,selectionLayer,driftLayer,tripLayer,locationLayer,profileDot,depthLayer,contourLayer;
-const state={page:'kart',species:SPECIES.some(s=>s.id===db.preferences.species)?db.preferences.species:'all',region:'all',depth:'all',kind:'all',radius:0,center:[60.08,5.02],query:'',savedOnly:false,selected:null,hours:0,bundle:null,weatherRequest:0,session:null,location:null,catchFilter:'all',dialogKind:null,analysis:0};
+const preferredSpecies=SPECIES.some(s=>s.id===db.preferences.species)?db.preferences.species:'all';
+const state={page:'kart',species:preferredSpecies,collectionChosen:preferredSpecies!=='all',region:'all',depth:'all',kind:'all',radius:0,center:[60.08,5.02],query:'',savedOnly:false,selected:null,hours:0,bundle:null,weatherRequest:0,session:null,location:null,catchFilter:'all',dialogKind:null,analysis:0};
 let toastTimer,sessionTimer,photoData=null,editingCatch=null,appStarted=false,gpsRequest=false;
 
 function toast(message){clearTimeout(toastTimer);$('#toast').textContent=message;$('#toast').hidden=false;toastTimer=setTimeout(()=>$('#toast').hidden=true,3300);}
@@ -55,14 +56,17 @@ function selectedArea(){return enriched(areaById(state.selected));}
 
 function renderResults(){
   const legacy=state.savedOnly?(catalog?.legacySpots||[]).filter(a=>db.saved.includes(a.id)&&!allAreas.some(current=>current.id===a.id)):[];
-  results=filterAreas([...allAreas,...db.custom,...legacy],{...state,saved:db.saved});
+  const waitingForSpecies=!state.collectionChosen&&!state.savedOnly&&!state.query&&state.region==='all'&&state.depth==='all'&&state.kind==='all'&&!state.radius;
+  results=waitingForSpecies?[]:filterAreas([...allAreas,...db.custom,...legacy],{...state,saved:db.saved});
   if(state.savedOnly){for(const a of db.custom.filter(s=>!s.depth&&db.saved.includes(s.id)))results.push({...a,distance:distance(state.center,a.coordinates),choices:[]});}
   $('#area-count').textContent=allAreas.length;$('#species-label').textContent=bySpecies(state.species)?.name||'Alle arter';
   $('#explorer-title').textContent=state.savedOnly?'Lagrede plasser':state.species==='all'?'Fiskeplasser':`${bySpecies(state.species)?.name||'Valgte'}-plasser`;
-  $('#result-label').textContent=`${results.length} ${state.savedOnly?'lagrede steder':'analyserte steder'} · ${state.savedOnly?'bare på denne enheten':'valgt fra sjøkartet'}`;
-  $('#mobile-count').textContent=`Vis ${results.length} områder`;
+  $('#result-label').textContent=waitingForSpecies?'Velg en art øverst for å se områdene.':`${results.length} ${state.savedOnly?'lagrede steder':'analyserte steder'} · ${state.savedOnly?'bare på denne enheten':'valgt fra sjøkartet'}`;
+  $('#mobile-count').textContent=waitingForSpecies?'Velg art':'Vis '+results.length+' områder';
   $$('.quick-species [data-species]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.species===state.species)));
-  $('#area-list').innerHTML=results.length?results.map(areaCard).join(''):empty(state.savedOnly?'Ingen lagrede plasser':'Ingen områder passer',state.savedOnly?'Velg en markør og trykk Lagre.':'Prøv en annen art eller utvid søket.',`<button class="secondary" data-action="reset-filters">Vis alle områder</button>`);
+  $('#area-list').innerHTML=waitingForSpecies
+    ?empty('Hva vil du fiske?',`Trykk på en art øverst. Da viser vi bare områdene som passer for den fisken.`)
+    :results.length?results.map(areaCard).join(''):empty(state.savedOnly?'Ingen lagrede plasser':'Ingen områder passer',state.savedOnly?'Velg en markør og trykk Lagre.':'Prøv en annen art eller utvid søket.',`<button class="secondary" data-action="reset-filters">Start på nytt</button>`);
   const active=[state.region!=='all',state.depth!=='all',state.kind!=='all',state.radius>0].filter(Boolean).length;
   $('#filter-count').hidden=!active;$('#filter-count').textContent=active;
   $$('[data-list]').forEach(b=>b.setAttribute('aria-selected',String((b.dataset.list==='saved')===state.savedOnly)));
@@ -190,7 +194,7 @@ function showSpecies(){
 }
 function chooseSpecies(id,{showPlaces=false}={}){
   if(id!=='all'&&fishingRule(id,state.center[0]).blocked){showSpeciesGuide(id);return;}
-  state.species=id;commit(d=>d.preferences.species=id);
+  state.species=id;state.collectionChosen=true;commit(d=>d.preferences.species=id);
   if($('#dialog').open)closeModal();
   if(showPlaces&&state.selected)closeDetail();else renderResults();
   if(!showPlaces&&state.selected){renderDetail();drawSelection(selectedArea());}
@@ -382,7 +386,7 @@ const actions={
   'expand-detail':()=>$('#detail-panel').classList.toggle('expanded'),
   'close-dialog':closeModal,'close-detail':closeDetail,'species':showSpecies,'filters':showFilters,'layers':showLayers,'fit':fitResults,'locate':locate,'retry-locate':()=>{closeModal();locate();},'sources':showSources,'more':showMore,'conditions':showConditions,'analyze':analyze,
   'zoom-in':()=>map.zoomIn(),'zoom-out':()=>map.zoomOut(),'show-list':()=>{$('#map-surface').classList.add('list-open');},'collapse-list':()=>$('#map-surface').classList.remove('list-open'),
-  'saved':()=>{Object.assign(state,{savedOnly:true,query:'',species:'all',region:'all',depth:'all',kind:'all',radius:0});$('#search').value='';showPage('kart',false);closeDetail();$('#map-surface').classList.add('list-open');renderResults();},
+  'saved':()=>{Object.assign(state,{savedOnly:true,collectionChosen:true,query:'',species:'all',region:'all',depth:'all',kind:'all',radius:0});$('#search').value='';showPage('kart',false);closeDetail();$('#map-surface').classList.add('list-open');renderResults();},
   'save-spot':saveSpot,'save-custom':saveCustom,'drift':showDrift,'show-drift':drawDrift,'add-trip':addTrip,'show-trip':showTrip,
   'start-fishing':startFishing,'end-fishing':endFishing,'start-trip':()=>{const id=db.trip?.stops[0];if(id){selectSpot(id);startFishing();}},
   'new-catch':()=>catchForm(),'edit-catch':()=>catchForm(state.catchId),'delete-catch':deleteCatch,'catch-map':()=>{const c=db.catches.find(x=>x.id===state.catchId);closeModal();if(c?.spotId)selectSpot(c.spotId);},
@@ -392,7 +396,7 @@ const actions={
   'toggle-password':()=>{const input=$('#auth-gate input[name="password"]'),button=$('#auth-gate [data-action="toggle-password"]'),show=input.type==='password';input.type=show?'text':'password';button.textContent=show?'Skjul':'Vis';button.setAttribute('aria-label',show?'Skjul passord':'Vis passord');},
   'sign-out':async()=>{await AuthService.signOut();toast('Du er logget ut.');if(state.page==='profil')renderProfile();},
   'verify-email':async()=>{await AuthService.resendVerification();toast('Ny bekreftelsesmail er sendt.');},
-  'reset-filters':()=>{Object.assign(state,{region:'all',depth:'all',kind:'all',radius:0,query:'',species:'all',savedOnly:false});$('#search').value='';commit(d=>d.preferences.species='all');closeModal();renderResults();fitResults();},
+  'reset-filters':()=>{Object.assign(state,{region:'all',depth:'all',kind:'all',radius:0,query:'',species:'all',collectionChosen:false,savedOnly:false});$('#search').value='';commit(d=>d.preferences.species='all');closeModal();renderResults();fitResults();},
   'reload':()=>location.reload()
 };
 function setForecastHour(button){
@@ -431,7 +435,7 @@ document.addEventListener('change',e=>{if(e.target.dataset.layer){const key=e.ta
 document.addEventListener('submit',async e=>{
   e.preventDefault();const form=e.target;if(!form.reportValidity())return;
   try{
-    if(form.id==='filters-form'){const f=Object.fromEntries(new FormData(form));Object.assign(state,f,{radius:Number(f.radius),center:[map.getCenter().lat,map.getCenter().lng]});closeModal();renderResults();fitResults();}
+    if(form.id==='filters-form'){const f=Object.fromEntries(new FormData(form));Object.assign(state,f,{collectionChosen:true,radius:Number(f.radius),center:[map.getCenter().lat,map.getCenter().lng]});closeModal();renderResults();fitResults();}
     if(form.id==='trip-form')generateTrip(form);
     if(form.id==='catch-form')saveCatch(form);
     if(form.id==='boat-form'){const f=Object.fromEntries(new FormData(form));if(commit(d=>d.boat={name:f.name.trim(),speed:Number(f.speed),waveLimit:Number(f.waveLimit)}))toast('Båtprofilen er lagret.');}
@@ -445,7 +449,7 @@ document.addEventListener('submit',async e=>{
     }
   }catch(err){console.error(err);toast('Kunne ikke lagre. Kontroller feltene.');}
 });
-$('#search').addEventListener('input',e=>{state.query=e.target.value;renderResults();$('#map-surface').classList.add('list-open');});
+$('#search').addEventListener('input',e=>{state.query=e.target.value;state.collectionChosen=true;renderResults();$('#map-surface').classList.add('list-open');});
 $('#sort-order').addEventListener('change',e=>{state.sort=e.target.value;renderResults();});
 // Only the handles capture gestures; map panning and content scrolling remain native.
 let sheetGesture=null,suppressSheetClickUntil=0;

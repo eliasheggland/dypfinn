@@ -187,7 +187,15 @@ function showSpecies(){
   modal('Hva vil du fiske etter?',`<input type="search" class="control" id="species-search" placeholder="Søk blant ${SPECIES.length} matfisk" aria-label="Søk fiskearter"><div class="species-grid"><button class="species-option ${state.species==='all'?'active':''}" data-species="all">${icon('fish')}<span>Alle arter<small>Vis alle søkeområder</small></span></button>${SPECIES.map(s=>`<button class="species-option ${s.id===state.species?'active':''}" data-species="${s.id}">${icon('fish')}<span>${s.name}<small>${fishingRule(s.id,state.center[0]).blocked?'Fredet her · se regler':fishingRule(s.id,state.center[0]).label}</small></span></button>`).join('')}</div><h3 class="section-title">Artsguide og minstemål</h3><div class="species-grid">${SPECIES.map(s=>`<button class="secondary" data-guide="${s.id}">${s.name} · regler</button>`).join('')}</div>`,'','species');
   $('#species-search').oninput=e=>$$('.species-option').forEach(b=>b.hidden=!b.textContent.toLowerCase().includes(e.target.value.toLowerCase()));
 }
-function chooseSpecies(id){if(id!=='all'&&fishingRule(id,state.center[0]).blocked){showSpeciesGuide(id);return;}state.species=id;commit(d=>d.preferences.species=id);closeModal();renderResults();if(state.selected){renderDetail();drawSelection(selectedArea());}toast(`${bySpecies(id)?.name||'Alle arter'} · ${results.length} aktuelle områder`);}
+function chooseSpecies(id,{showPlaces=false}={}){
+  if(id!=='all'&&fishingRule(id,state.center[0]).blocked){showSpeciesGuide(id);return;}
+  state.species=id;commit(d=>d.preferences.species=id);
+  if($('#dialog').open)closeModal();
+  if(showPlaces&&state.selected)closeDetail();else renderResults();
+  if(!showPlaces&&state.selected){renderDetail();drawSelection(selectedArea());}
+  if(showPlaces){$('#map-surface').classList.add('list-open');fitResults();}
+  toast(`${bySpecies(id)?.name||'Alle arter'} · ${results.length} aktuelle områder`);
+}
 function showFilters(){
   const option=(value,label,current)=>`<option value="${value}" ${value===current?'selected':''}>${label}</option>`;
   modal('Avgrens søket',`<form id="filters-form" class="form-grid two">
@@ -409,7 +417,7 @@ document.addEventListener('click',async e=>{
     if(b.dataset.action&&actions[b.dataset.action])await actions[b.dataset.action]();
     if(b.dataset.page){if($('#dialog').open)closeModal();showPage(b.dataset.page);}
     if(b.dataset.spot){closeModal();selectSpot(b.dataset.spot);}
-    if(b.dataset.species)chooseSpecies(b.dataset.species);
+    if(b.dataset.species)chooseSpecies(b.dataset.species,{showPlaces:Boolean(b.closest('.quick-species'))});
     if(b.dataset.guide)showSpeciesGuide(b.dataset.guide);
     if(b.dataset.list){state.savedOnly=b.dataset.list==='saved';renderResults();}
     if(b.dataset.hour)setForecastHour(b);

@@ -17,6 +17,7 @@ assert.match(html,/id="auth-gate"/,'Innloggingsporten må vises før appen.');
 assert.match(html,/id="app" hidden/,'Kartet må være skjult frem til brukeren er innlogget.');
 assert.doesNotMatch(html,/class="mobile-gps"/,'Mobilkartet skal ha én GPS-kontroll, ikke en ekstra bannerknapp.');
 assert.doesNotMatch(html,/id="conditions-pill"/,'Værforhold skal vises i valgt stedsdetalj, ikke som et ekstra kartbanner.');
+for(const id of ['lyr','makrell','sei','lange','brosme','torsk'])assert.match(html,new RegExp(`data-species="${id}"`),`Artsvelgeren mangler ${id}.`);
 
 const authSource=await readFile(resolve(root,'auth.js'),'utf8');
 const appSource=await readFile(resolve(root,'app.js'),'utf8');
